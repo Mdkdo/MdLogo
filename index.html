@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Turtle Interpreter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Interpréteur Logo</h1>
+        </header>
+        <main>
+            <div id="editor-container">
+                <div id="toolbar">
+                    <select id="examples-select">
+                        <option value="">-- Choisir un exemple --</option>
+                        <option value="square">Carré</option>
+                        <option value="circle">Cercle</option>
+                        <option value="spiral-fixed">Spirale</option>
+                        <option value="flower">Fleur</option>
+                        <option value="colorful">Couleurs</option>
+                    </select>
+                </div>
+                <textarea id="code-editor" placeholder="Entrez vos commandes Logo ici...&#10;Exemple: repeat 4 [ fd 100 rt 90 ]"></textarea>
+                <div id="controls">
+                    <button id="run-btn">Exécuter</button>
+                    <button id="clear-btn">Effacer</button>
+                </div>
+            </div>
+            <div id="canvas-container">
+                <canvas id="turtle-canvas" width="600" height="500"></canvas>
+            </div>
+        </main>
+        <div id="error-console"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
