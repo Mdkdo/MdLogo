@@ -14,6 +14,7 @@ class Turtle {
         this.color = 'black';
         this.width = 2;
         this.visible = true;
+        this.font = '16px Consolas';
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
@@ -79,6 +80,20 @@ class Turtle {
 
     setpensize(size) {
         this.width = parseFloat(size);
+    }
+
+    setFont(font) {
+        this.font = font;
+    }
+
+    write(text) {
+        this.ctx.save();
+        this.ctx.translate(this.x, this.y);
+        this.ctx.rotate(this.angle + Math.PI / 2);
+        this.ctx.font = this.font;
+        this.ctx.fillStyle = this.color;
+        this.ctx.fillText(text, 0, 0);
+        this.ctx.restore();
     }
 
     drawTurtle() {
@@ -172,25 +187,27 @@ class LogoInterpreter {
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
         code = code.replace(/(>=|<=|!=|<>|[+\-*/^><=])/g, ' $1 ');
 
-        return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+        // Use a better way to split while keeping case for strings but lowercasing for commands
+        return code.split(/\s+/).filter(t => t.length > 0);
     }
 
     extractProcedures(tokens) {
         let i = 0;
         while (i < tokens.length) {
-            if (tokens[i] === 'to' || tokens[i] === 'pour') {
+            const token = tokens[i].toLowerCase();
+            if (token === 'to' || token === 'pour') {
                 const startIdx = i;
                 i++;
-                const name = tokens[i++];
+                const name = tokens[i++].toLowerCase();
                 const params = [];
                 while (i < tokens.length && tokens[i].startsWith(':')) {
-                    params.push(tokens[i++].substring(1));
+                    params.push(tokens[i++].substring(1).toLowerCase());
                 }
                 const body = [];
-                while (i < tokens.length && tokens[i] !== 'end' && tokens[i] !== 'fin') {
+                while (i < tokens.length && tokens[i].toLowerCase() !== 'end' && tokens[i].toLowerCase() !== 'fin') {
                     body.push(tokens[i++]);
                 }
-                if (i >= tokens.length || (tokens[i] !== 'end' && tokens[i] !== 'fin')) {
+                if (i >= tokens.length || (tokens[i].toLowerCase() !== 'end' && tokens[i].toLowerCase() !== 'fin')) {
                      throw new Error(this.t('unterminated_procedure') + ': ' + name);
                 }
                 i++; // skip 'end' or 'fin'
@@ -207,16 +224,108 @@ class LogoInterpreter {
         let i = 0;
 
         const evaluateExpression = () => {
+            const parseExpression = () => parseLogical();
+
+            const parseLogical = () => {
+                let left = parseComparison();
+                while (i < tokens.length) {
+                    const op = tokens[i].toLowerCase();
+                    if (['and', 'et', 'or', 'ou', 'xor'].includes(op)) {
+                        i++;
+                        const right = parseComparison();
+                        switch (op) {
+                            case 'and':
+                            case 'et': left = left && right; break;
+                            case 'or':
+                            case 'ou': left = left || right; break;
+                            case 'xor': left = (!!left ^ !!right); break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+                return left;
+            };
+
+            const parseComparison = () => {
+                let left = parseAddSub();
+                while (i < tokens.length && ['=', '!=', '<>', '<', '>', '<=', '>='].includes(tokens[i])) {
+                    const op = tokens[i++];
+                    const right = parseAddSub();
+                    switch (op) {
+                        case '=': left = (left == right); break;
+                        case '!=':
+                        case '<>': left = (left != right); break;
+                        case '<': left = (left < right); break;
+                        case '>': left = (left > right); break;
+                        case '<=': left = (left <= right); break;
+                        case '>=': left = (left >= right); break;
+                    }
+                }
+                return left;
+            };
+
+            const parseAddSub = () => {
+                let left = parseMulDiv();
+                while (i < tokens.length && (tokens[i] === '+' || tokens[i] === '-')) {
+                    const op = tokens[i++];
+                    const right = parseMulDiv();
+                    if (op === '+') left += right;
+                    else left -= right;
+                }
+                return left;
+            };
+
+            const parseMulDiv = () => {
+                let left = parsePower();
+                while (i < tokens.length && (tokens[i] === '*' || tokens[i] === '/')) {
+                    const op = tokens[i++];
+                    const right = parsePower();
+                    if (op === '*') left *= right;
+                    else left /= right;
+                }
+                return left;
+            };
+
+            const parsePower = () => {
+                let left = parseUnary();
+                while (i < tokens.length && tokens[i] === '^') {
+                    i++;
+                    let right = parseUnary();
+                    left = Math.pow(left, right);
+                }
+                return left;
+            };
+
+            const parseUnary = () => {
+                if (tokens[i] === '-') {
+                    i++;
+                    return -parseUnary();
+                }
+                if (tokens[i] === '+') {
+                    i++;
+                    return parseUnary();
+                }
+                return parsePrimary();
+            };
+
             const parsePrimary = () => {
                 let token = tokens[i++];
+                if (!token) return undefined;
+                const lowerToken = token.toLowerCase();
+
                 if (token === '(') {
                     let val = parseExpression();
                     if (tokens[i++] !== ')') throw new Error('Attendu )');
                     return val;
                 }
 
-                if (['sin', 'cos', 'tan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'pow'].includes(token)) {
-                    const func = token;
+                if (lowerToken === 'not' || lowerToken === 'non') {
+                    return !parsePrimary();
+                }
+
+                if (['sin', 'cos', 'tan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'pow'].includes(lowerToken)) {
+                    const func = lowerToken;
                     if (func === 'pow') {
                         const base = parsePrimary();
                         const exponent = parsePrimary();
@@ -236,48 +345,16 @@ class LogoInterpreter {
                     }
                 }
 
-                if (token && token.startsWith(':')) {
-                    const varName = token.substring(1);
+                if (token.startsWith(':')) {
+                    const varName = token.substring(1).toLowerCase();
                     if (localVars.has(varName)) return localVars.get(varName);
                     if (this.variables.has(varName)) return this.variables.get(varName);
                     throw new Error(this.t('unknown_variable') + ': ' + varName);
                 }
 
                 const val = parseFloat(token);
-                if (isNaN(val)) return token;
+                if (isNaN(val)) return token; // String (can be case sensitive)
                 return val;
-            };
-
-            const parsePower = () => {
-                let left = parsePrimary();
-                while (i < tokens.length && tokens[i] === '^') {
-                    i++;
-                    let right = parsePrimary();
-                    left = Math.pow(left, right);
-                }
-                return left;
-            };
-
-            const parseMulDiv = () => {
-                let left = parsePower();
-                while (i < tokens.length && (tokens[i] === '*' || tokens[i] === '/')) {
-                    const op = tokens[i++];
-                    const right = parsePower();
-                    if (op === '*') left *= right;
-                    else left /= right;
-                }
-                return left;
-            };
-
-            const parseExpression = () => {
-                let left = parseMulDiv();
-                while (i < tokens.length && (tokens[i] === '+' || tokens[i] === '-')) {
-                    const op = tokens[i++];
-                    const right = parseMulDiv();
-                    if (op === '+') left += right;
-                    else left -= right;
-                }
-                return left;
             };
 
             return parseExpression();
@@ -290,20 +367,7 @@ class LogoInterpreter {
             i = 0;
 
             try {
-                const v1 = evaluateExpression();
-                if (i >= tokens.length) return !!v1;
-                const op = tokens[i++];
-                const v2 = evaluateExpression();
-                switch (op) {
-                    case '=': return v1 == v2;
-                    case '!=':
-                    case '<>': return v1 != v2;
-                    case '<': return v1 < v2;
-                    case '>': return v1 > v2;
-                    case '<=': return v1 <= v2;
-                    case '>=': return v1 >= v2;
-                    default: return !!v1;
-                }
+                return evaluateExpression();
             } finally {
                 tokens = originalTokens;
                 i = originalI;
@@ -323,12 +387,24 @@ class LogoInterpreter {
             return block;
         };
 
+        const getQuotedString = () => {
+            let token = tokens[i++];
+            if (!token) return "";
+            if (token.startsWith('"')) return token.substring(1).replace(/_/g, ' ');
+            if (token === '[') {
+                i--; // put it back
+                return getBlock().join(' ');
+            }
+            return token;
+        };
+
         while (i < tokens.length) {
-            const token = tokens[i++];
+            const rawToken = tokens[i++];
+            const token = rawToken.toLowerCase();
 
             // Assignment
-            if (token.startsWith(':') && i < tokens.length && tokens[i] === '=') {
-                const varName = token.substring(1);
+            if (rawToken.startsWith(':') && i < tokens.length && tokens[i] === '=') {
+                const varName = rawToken.substring(1).toLowerCase();
                 i++;
                 const val = evaluateExpression();
                 if (localVars.has(varName)) localVars.set(varName, val);
@@ -336,7 +412,7 @@ class LogoInterpreter {
                 continue;
             }
 
-            const commonCommands = ['fd','av','forward','bk','re','back','rt','td','right','lt','tg','left','pu','lc','penup','pd','bc','pendown','cs','ve','clearscreen','home','ht','ct','hideturtle','st','mt','showturtle','pc','fc','setpencolor','ps','tc','setpensize','make','donne','repeat','répète','if','si','ifelse','si_sinon','to','pour','end','fin'];
+            const commonCommands = ['fd', 'av', 'forward', 'bk', 're', 'back', 'rt', 'td', 'right', 'lt', 'tg', 'left', 'pu', 'lc', 'penup', 'pd', 'bc', 'pendown', 'cs', 've', 'clearscreen', 'home', 'ht', 'ct', 'hideturtle', 'st', 'mt', 'showturtle', 'pc', 'fc', 'setpencolor', 'ps', 'tc', 'setpensize', 'make', 'donne', 'repeat', 'repete', 'répète', 'if', 'si', 'ifelse', 'si_sinon', 'to', 'pour', 'end', 'fin', 'ecris', 'write', 'police', 'font'];
             if (!commonCommands.includes(token) &&
                 !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
                 const varName = token;
@@ -419,10 +495,11 @@ class LogoInterpreter {
                 case 'make':
                 case 'donne':
                     let name = tokens[i++];
-                    if (name.startsWith('"')) name = name.substring(1);
+                    if (name.startsWith('"')) name = name.substring(1).toLowerCase();
                     this.variables.set(name, evaluateExpression());
                     break;
                 case 'repeat':
+                case 'repete':
                 case 'répète':
                     const count = evaluateExpression();
                     const body = getBlock();
@@ -451,8 +528,16 @@ class LogoInterpreter {
                         this.run(falseBody, localVars);
                     }
                     break;
+                case 'ecris':
+                case 'write':
+                    this.turtle.write(getQuotedString());
+                    break;
+                case 'police':
+                case 'font':
+                    this.turtle.setFont(getQuotedString());
+                    break;
                 default:
-                    throw new Error(this.t('unknown_command') + ': ' + token);
+                    throw new Error(this.t('unknown_command') + ': ' + rawToken);
             }
         }
     }
@@ -473,15 +558,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const titleEl = document.querySelector('header h1');
 
     const examples = {
-        'square': 'répète 4 [ av 100 td 90 ]',
-        'circle': 'répète 360 [ av 1 td 1 ]',
-        'spiral-fixed': 'répète 50 [ av 100 td 123 ]',
-        'flower': 'répète 36 [ répète 4 [ av 100 td 90 ] td 10 ]',
+        'square': 'repete 4 [ av 100 td 90 ]',
+        'circle': 'repete 360 [ av 1 td 1 ]',
+        'spiral-fixed': 'repete 50 [ av 100 td 123 ]',
+        'flower': 'repete 36 [ repete 4 [ av 100 td 90 ] td 10 ]',
         'colorful': 'fc red tc 5 av 50 fc blue av 50 fc green av 50',
-        'procedure': 'pour carré :taille\n  répète 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
+        'procedure': 'pour carré :taille\n  repete 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
         'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
-        'math': 'angle = 0\nrépète 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrépète 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
-        'repcount-fix': 'répète 100 [\n   av sqrt :repcount * 10\n   td 20\n]'
+        'math': 'angle = 0\nrepete 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrepete 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
+        'repcount-fix': 'repete 100 [\n   av sqrt :repcount * 10\n   td 20\n]',
+        'text': 'police "bold_20px_Arial\necris "Bonjour\nav 50\nfc red\npolice "italic_16px_Courier\necris [Le Logo est puissant !]\nre 50 td 90 av 100\nsi [ (1 = 1) et (non (1 > 2)) ] [\n  ecris "Logique_OK\n]'
     };
 
     let translations = interpreter.translations;

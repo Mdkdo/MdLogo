@@ -1,7 +1,7 @@
 {
   "fr": {
     "title": "Interpréteur Logo (Tortue)",
-    "placeholder": "Entrez vos commandes Logo ici...\nExemple: répète 4 [ av 100 td 90 ]",
+    "placeholder": "Entrez vos commandes Logo ici...\nExemple: repete 4 [ av 100 td 90 ]",
     "run": "Exécuter",
     "clear": "Effacer",
     "choose_example": "-- Choisir un exemple --",
@@ -14,7 +14,8 @@
       "procedure": "Procédure (Carré)",
       "tree": "Arbre récursif",
       "math": "Fonctions Mathématiques",
-      "repcount-fix": "Spirale (Variables)"
+      "repcount-fix": "Spirale (Variables)",
+      "text": "Texte et Logique"
     },
     "errors": {
       "unknown_command": "Commande inconnue",
@@ -38,7 +39,8 @@
       "procedure": "Procedure (Square)",
       "tree": "Recursive Tree",
       "math": "Math Functions",
-      "repcount-fix": "Spiral (Variables)"
+      "repcount-fix": "Spiral (Variables)",
+      "text": "Text and Logic"
     },
     "errors": {
       "unknown_command": "Unknown command",

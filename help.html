@@ -164,29 +164,44 @@
                 <td><code>st</code></td>
                 <td>Montre la tortue</td>
             </tr>
+            <tr>
+                <td><code>ecris [texte]</code></td>
+                <td><code>write [text]</code></td>
+                <td>Affiche du texte sur le canevas</td>
+            </tr>
+            <tr>
+                <td><code>police [font]</code></td>
+                <td><code>font [font]</code></td>
+                <td>Change la police (ex: "bold 20px Arial")</td>
+            </tr>
         </table>
     </section>
 
     <section>
         <h2>3. Structures de contrôle</h2>
-        <h3>Boucles : répète (repeat)</h3>
-        <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle (commence à 1).</p>
+        <h3>Boucles : répète / repete (repeat)</h3>
+        <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle.</p>
         <pre>répète 4 [ av 100 td 90 ]</pre>
 
         <h3>Conditions : si / si_sinon (if / ifelse)</h3>
         <p>Les conditions doivent être entre crochets. Opérateurs supportés : <code>=</code>, <code>!=</code>, <code><</code>, <code>></code>, <code><=</code>, <code>>=</code>.</p>
-        <pre>si [ :x > 50 ] [ av 100 ]
-si_sinon [ :angle = 90 ] [ av 50 ] [ re 50 ]</pre>
+        <pre>si [ :x > 50 ] [ av 100 ]</pre>
+
+        <h3>Opérateurs Logiques</h3>
+        <p>Utilisables dans les conditions pour combiner des tests.</p>
+        <ul>
+            <li><code>et</code> / <code>and</code></li>
+            <li><code>ou</code> / <code>or</code></li>
+            <li><code>non</code> / <code>not</code></li>
+            <li><code>xor</code></li>
+        </ul>
+        <pre>si [ (:x > 0) et (:x < 100) ] [ av :x ]</pre>
     </section>
 
     <section>
         <h2>4. Variables et Affectations</h2>
-        <p>Vous pouvez définir des variables de deux manières :</p>
-        <ul>
-            <li>Syntaxe standard Logo : <code>donne "nom valeur</code> (anglais: <code>make</code>)</li>
-            <li>Syntaxe moderne : <code>nom = valeur</code> ou <code>:nom = valeur</code></li>
-        </ul>
-        <p>Pour utiliser la valeur d'une variable, préfixez son nom par <code>:</code>.</p>
+        <p>Syntaxe standard Logo : <code>donne "nom valeur</code> (anglais: <code>make</code>)</p>
+        <p>Syntaxe moderne : <code>nom = valeur</code></p>
         <pre>taille = 100
 av :taille</pre>
     </section>
@@ -196,25 +211,13 @@ av :taille</pre>
         <p>Créez des fonctions réutilisables avec <code>pour [nom] [paramètres] ... fin</code>.</p>
         <pre>pour carré :taille
   répète 4 [ av :taille td 90 ]
-fin
-
-carré 50
-carré 150</pre>
+fin</pre>
     </section>
 
     <section>
         <h2>6. Expressions et Fonctions Mathématiques</h2>
-        <p>Le système supporte les expressions complexes avec parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
-        <p>Fonctions supportées (angles en degrés) :</p>
-        <ul>
-            <li><code>sin</code>, <code>cos</code>, <code>tan</code></li>
-            <li><code>sqrt</code> (racine carrée)</li>
-            <li><code>abs</code> (valeur absolue)</li>
-            <li><code>exp</code>, <code>ln</code>, <code>log</code></li>
-            <li><code>pow</code> (puissance : <code>pow base exp</code>)</li>
-        </ul>
-        <pre>av 50 * sin 45
-angle = :angle + (360 / 12)</pre>
+        <p>Support des parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
+        <p>Fonctions (angles en degrés) : <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>sqrt</code>, <code>abs</code>, <code>exp</code>, <code>ln</code>, <code>pow</code>.</p>
     </section>
 
     <footer>
