@@ -118,8 +118,6 @@ class LogoInterpreter {
         this.turtle.reset();
 
         const tokens = this.tokenize(code);
-
-        // First pass: extract procedures
         this.extractProcedures(tokens);
 
         try {
@@ -136,9 +134,11 @@ class LogoInterpreter {
         code = code.replace(/;.*$/gm, '');
         // Replace brackets with spaces around them
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
+        // Replace parentheses with spaces
+        code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
         // Replace operators with spaces around them
-        code = code.replace(/([+\-*/><=])/g, ' $1 ');
-        // Fix back the != and <= and >=
+        code = code.replace(/([+\-*/^><=])/g, ' $1 ');
+        // Fix back the != and <= and >= and <>
         code = code.replace(/! =/g, '!=').replace(/> =/g, '>=').replace(/< =/g, '<=').replace(/< >/g, '<>');
 
         return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
@@ -162,8 +162,6 @@ class LogoInterpreter {
                 if (tokens[i] !== 'end') throw new Error(`Procédure non terminée: ${name}`);
                 i++; // skip 'end'
                 this.procedures.set(name, { params, body });
-
-                // Remove procedure definition from tokens
                 tokens.splice(startIdx, i - startIdx);
                 i = startIdx;
             } else {
@@ -175,63 +173,109 @@ class LogoInterpreter {
     run(tokens, localVars) {
         let i = 0;
 
-        const resolveValue = (token) => {
-            if (typeof token !== 'string') return token;
-            if (token.startsWith(':')) {
-                const varName = token.substring(1);
-                if (localVars.has(varName)) return localVars.get(varName);
-                if (this.variables.has(varName)) return this.variables.get(varName);
-                throw new Error(`Variable inconnue: ${varName}`);
-            }
-            const val = parseFloat(token);
-            return isNaN(val) ? token : val;
-        };
-
         const evaluateExpression = () => {
-            let left = resolveValue(tokens[i++]);
-
-            // Check for arithmetic operators
-            if (i < tokens.length && ['+', '-', '*', '/'].includes(tokens[i])) {
-                const op = tokens[i++];
-                const right = resolveValue(tokens[i++]);
-                switch (op) {
-                    case '+': return left + right;
-                    case '-': return left - right;
-                    case '*': return left * right;
-                    case '/': return left / right;
+            // Recursive descent parser for expressions
+            const parsePrimary = () => {
+                let token = tokens[i++];
+                if (token === '(') {
+                    let val = parseExpression();
+                    if (tokens[i++] !== ')') throw new Error('Attendu )');
+                    return val;
                 }
-            }
-            return left;
+
+                // Math functions
+                if (['sin', 'cos', 'tan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'pow'].includes(token)) {
+                    const func = token;
+                    if (func === 'pow') {
+                        const base = parsePrimary();
+                        const exponent = parsePrimary();
+                        return Math.pow(base, exponent);
+                    }
+                    const arg = parsePrimary();
+                    switch (func) {
+                        case 'sin': return Math.sin(arg * Math.PI / 180);
+                        case 'cos': return Math.cos(arg * Math.PI / 180);
+                        case 'tan': return Math.tan(arg * Math.PI / 180);
+                        case 'sqrt': return Math.sqrt(arg);
+                        case 'abs': return Math.abs(arg);
+                        case 'exp': return Math.exp(arg);
+                        case 'ln':
+                        case 'log': return Math.log(arg);
+                        default: return 0;
+                    }
+                }
+
+                if (token.startsWith(':')) {
+                    const varName = token.substring(1);
+                    if (localVars.has(varName)) return localVars.get(varName);
+                    if (this.variables.has(varName)) return this.variables.get(varName);
+                    throw new Error(`Variable inconnue: ${varName}`);
+                }
+
+                const val = parseFloat(token);
+                if (isNaN(val)) return token; // String or unknown
+                return val;
+            };
+
+            const parsePower = () => {
+                let left = parsePrimary();
+                while (i < tokens.length && tokens[i] === '^') {
+                    i++;
+                    let right = parsePrimary();
+                    left = Math.pow(left, right);
+                }
+                return left;
+            };
+
+            const parseMulDiv = () => {
+                let left = parsePower();
+                while (i < tokens.length && (tokens[i] === '*' || tokens[i] === '/')) {
+                    const op = tokens[i++];
+                    const right = parsePower();
+                    if (op === '*') left *= right;
+                    else left /= right;
+                }
+                return left;
+            };
+
+            const parseExpression = () => {
+                let left = parseMulDiv();
+                while (i < tokens.length && (tokens[i] === '+' || tokens[i] === '-')) {
+                    const op = tokens[i++];
+                    const right = parseMulDiv();
+                    if (op === '+') left += right;
+                    else left -= right;
+                }
+                return left;
+            };
+
+            return parseExpression();
         };
 
         const evaluateCondition = (condTokens) => {
-            // Minimal evaluator for condition block [ val1 op val2 ]
-            // We assume it's exactly 3 tokens for now or simple variable
-            let j = 0;
-            const resolveLocal = (t) => {
-                if (t.startsWith(':')) {
-                    const varName = t.substring(1);
-                    if (localVars.has(varName)) return localVars.get(varName);
-                    if (this.variables.has(varName)) return this.variables.get(varName);
-                    return t;
+            const originalTokens = tokens;
+            const originalI = i;
+            tokens = condTokens;
+            i = 0;
+
+            try {
+                const v1 = evaluateExpression();
+                if (i >= tokens.length) return !!v1;
+                const op = tokens[i++];
+                const v2 = evaluateExpression();
+                switch (op) {
+                    case '=': return v1 == v2;
+                    case '!=':
+                    case '<>': return v1 != v2;
+                    case '<': return v1 < v2;
+                    case '>': return v1 > v2;
+                    case '<=': return v1 <= v2;
+                    case '>=': return v1 >= v2;
+                    default: return !!v1;
                 }
-                const v = parseFloat(t);
-                return isNaN(v) ? t : v;
-            };
-
-            const v1 = resolveLocal(condTokens[0]);
-            const op = condTokens[1];
-            const v2 = resolveLocal(condTokens[2]);
-
-            switch (op) {
-                case '=': return v1 == v2;
-                case '!=':
-                case '<>': return v1 != v2;
-                case '<': return v1 < v2;
-                case '>': return v1 > v2;
-                case '<=': return v1 <= v2;
-                case '>=': return v1 >= v2;
-                default: return !!v1;
+            } finally {
+                tokens = originalTokens;
+                i = originalI;
             }
         };
 
@@ -250,6 +294,25 @@ class LogoInterpreter {
 
         while (i < tokens.length) {
             const token = tokens[i++];
+
+            // Assignment
+            if (token.startsWith(':') && i < tokens.length && tokens[i] === '=') {
+                const varName = token.substring(1);
+                i++; // skip =
+                const val = evaluateExpression();
+                if (localVars.has(varName)) localVars.set(varName, val);
+                else this.variables.set(varName, val);
+                continue;
+            }
+            if (!['fd','forward','bk','back','rt','right','lt','left','pu','penup','pd','pendown','cs','clearscreen','home','ht','hideturtle','st','showturtle','pc','setpencolor','ps','setpensize','make','repeat','if','ifelse','to','end'].includes(token) &&
+                !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
+                const varName = token;
+                i++; // skip =
+                const val = evaluateExpression();
+                if (localVars.has(varName)) localVars.set(varName, val);
+                else this.variables.set(varName, val);
+                continue;
+            }
 
             if (this.procedures.has(token)) {
                 const proc = this.procedures.get(token);
@@ -303,23 +366,24 @@ class LogoInterpreter {
                     break;
                 case 'pc':
                 case 'setpencolor':
-                    this.turtle.setpencolor(resolveValue(tokens[i++]));
+                    this.turtle.setpencolor(evaluateExpression());
                     break;
                 case 'ps':
                 case 'setpensize':
                     this.turtle.setpensize(evaluateExpression());
                     break;
                 case 'make':
-                    let varName = tokens[i++];
-                    if (varName.startsWith('"')) varName = varName.substring(1);
-                    const varVal = evaluateExpression();
-                    this.variables.set(varName, varVal);
+                    let name = tokens[i++];
+                    if (name.startsWith('"')) name = name.substring(1);
+                    this.variables.set(name, evaluateExpression());
                     break;
                 case 'repeat':
                     const count = evaluateExpression();
                     const body = getBlock();
-                    for (let k = 0; k < count; k++) {
-                        this.run(body, localVars);
+                    for (let k = 1; k <= count; k++) {
+                        const newLocalVars = new Map(localVars);
+                        newLocalVars.set('repcount', k);
+                        this.run(body, newLocalVars);
                     }
                     break;
                 case 'if':
@@ -366,7 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'colorful': 'pc red ps 5 fd 50 pc blue fd 50 pc green fd 50',
         'procedure': 'to square :size\n  repeat 4 [ fd :size rt 90 ]\nend\n\nsquare 50\nsquare 100',
         'tree': 'to tree :size\n  if [ :size > 5 ] [\n    fd :size\n    rt 20\n    tree :size - 10\n    lt 40\n    tree :size - 10\n    rt 20\n    bk :size\n  ]\nend\n\nps 2\nlt 90\npu bk 100 pd\ntree 60',
-        'polygon': 'to poly :n :size\n  repeat :n [ fd :size rt 360 / :n ]\nend\n\npoly 5 100\npoly 6 80'
+        'math': 'angle = 0\nrepeat 300 [\n  fd 2 * sin :angle\n  rt 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\ncs home\nrepeat 100 [\n  fd sqrt :repcount * 10\n  rt 20\n]',
+        'repcount-fix': 'repeat 100 [\n   fd sqrt :repcount * 10\n   rt 20\n]'
     };
 
     if (examplesSelect) {
