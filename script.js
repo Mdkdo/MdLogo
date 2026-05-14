@@ -108,13 +108,22 @@ class Turtle {
 class LogoInterpreter {
     constructor(turtle) {
         this.turtle = turtle;
+        this.variables = new Map();
+        this.procedures = new Map();
     }
 
     execute(code) {
+        this.variables.clear();
+        this.procedures.clear();
+        this.turtle.reset();
+
         const tokens = this.tokenize(code);
-        this.turtle.reset(); // Reset turtle state and clear canvas before execution
+
+        // First pass: extract procedures
+        this.extractProcedures(tokens);
+
         try {
-            this.parse(tokens);
+            this.run(tokens, new Map());
         } catch (e) {
             console.error(e);
             throw e;
@@ -125,91 +134,215 @@ class LogoInterpreter {
 
     tokenize(code) {
         code = code.replace(/;.*$/gm, '');
+        // Replace brackets with spaces around them
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
+        // Replace operators with spaces around them
+        code = code.replace(/([+\-*/><=])/g, ' $1 ');
+        // Fix back the != and <= and >=
+        code = code.replace(/! =/g, '!=').replace(/> =/g, '>=').replace(/< =/g, '<=').replace(/< >/g, '<>');
+
         return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
     }
 
-    parse(tokens) {
+    extractProcedures(tokens) {
         let i = 0;
-        const executeTokens = (tks) => {
-            let j = 0;
-            while (j < tks.length) {
-                const token = tks[j];
-                j++;
-
-                switch (token) {
-                    case 'fd':
-                    case 'forward':
-                        this.turtle.forward(parseFloat(tks[j++]));
-                        break;
-                    case 'bk':
-                    case 'back':
-                        this.turtle.back(parseFloat(tks[j++]));
-                        break;
-                    case 'rt':
-                    case 'right':
-                        this.turtle.right(parseFloat(tks[j++]));
-                        break;
-                    case 'lt':
-                    case 'left':
-                        this.turtle.left(parseFloat(tks[j++]));
-                        break;
-                    case 'pu':
-                    case 'penup':
-                        this.turtle.penup();
-                        break;
-                    case 'pd':
-                    case 'pendown':
-                        this.turtle.pendown();
-                        break;
-                    case 'cs':
-                    case 'clearscreen':
-                        this.turtle.reset();
-                        break;
-                    case 'home':
-                        this.turtle.home();
-                        break;
-                    case 'ht':
-                    case 'hideturtle':
-                        this.turtle.hideturtle();
-                        break;
-                    case 'st':
-                    case 'showturtle':
-                        this.turtle.showturtle();
-                        break;
-                    case 'pc':
-                    case 'setpencolor':
-                        this.turtle.setpencolor(tks[j++]);
-                        break;
-                    case 'ps':
-                    case 'setpensize':
-                        this.turtle.setpensize(tks[j++]);
-                        break;
-                    case 'repeat':
-                        const countStr = tks[j++];
-                        const count = parseInt(countStr);
-                        if (isNaN(count)) throw new Error(`Nombre de répétitions invalide: ${countStr}`);
-                        if (tks[j++] !== '[') throw new Error('Attendu [ après le nombre de répétitions');
-                        const body = [];
-                        let bracketCount = 1;
-                        while (j < tks.length && bracketCount > 0) {
-                            if (tks[j] === '[') bracketCount++;
-                            if (tks[j] === ']') bracketCount--;
-                            if (bracketCount > 0) body.push(tks[j]);
-                            j++;
-                        }
-                        if (bracketCount > 0) throw new Error('Crochet fermant manquant ]');
-                        for (let k = 0; k < count; k++) {
-                            executeTokens(body);
-                        }
-                        break;
-                    default:
-                        if (token) throw new Error(`Commande inconnue: ${token}`);
+        while (i < tokens.length) {
+            if (tokens[i] === 'to') {
+                const startIdx = i;
+                i++; // skip 'to'
+                const name = tokens[i++];
+                const params = [];
+                while (i < tokens.length && tokens[i].startsWith(':')) {
+                    params.push(tokens[i++].substring(1));
                 }
+                const body = [];
+                while (i < tokens.length && tokens[i] !== 'end') {
+                    body.push(tokens[i++]);
+                }
+                if (tokens[i] !== 'end') throw new Error(`Procédure non terminée: ${name}`);
+                i++; // skip 'end'
+                this.procedures.set(name, { params, body });
+
+                // Remove procedure definition from tokens
+                tokens.splice(startIdx, i - startIdx);
+                i = startIdx;
+            } else {
+                i++;
+            }
+        }
+    }
+
+    run(tokens, localVars) {
+        let i = 0;
+
+        const resolveValue = (token) => {
+            if (typeof token !== 'string') return token;
+            if (token.startsWith(':')) {
+                const varName = token.substring(1);
+                if (localVars.has(varName)) return localVars.get(varName);
+                if (this.variables.has(varName)) return this.variables.get(varName);
+                throw new Error(`Variable inconnue: ${varName}`);
+            }
+            const val = parseFloat(token);
+            return isNaN(val) ? token : val;
+        };
+
+        const evaluateExpression = () => {
+            let left = resolveValue(tokens[i++]);
+
+            // Check for arithmetic operators
+            if (i < tokens.length && ['+', '-', '*', '/'].includes(tokens[i])) {
+                const op = tokens[i++];
+                const right = resolveValue(tokens[i++]);
+                switch (op) {
+                    case '+': return left + right;
+                    case '-': return left - right;
+                    case '*': return left * right;
+                    case '/': return left / right;
+                }
+            }
+            return left;
+        };
+
+        const evaluateCondition = (condTokens) => {
+            // Minimal evaluator for condition block [ val1 op val2 ]
+            // We assume it's exactly 3 tokens for now or simple variable
+            let j = 0;
+            const resolveLocal = (t) => {
+                if (t.startsWith(':')) {
+                    const varName = t.substring(1);
+                    if (localVars.has(varName)) return localVars.get(varName);
+                    if (this.variables.has(varName)) return this.variables.get(varName);
+                    return t;
+                }
+                const v = parseFloat(t);
+                return isNaN(v) ? t : v;
+            };
+
+            const v1 = resolveLocal(condTokens[0]);
+            const op = condTokens[1];
+            const v2 = resolveLocal(condTokens[2]);
+
+            switch (op) {
+                case '=': return v1 == v2;
+                case '!=':
+                case '<>': return v1 != v2;
+                case '<': return v1 < v2;
+                case '>': return v1 > v2;
+                case '<=': return v1 <= v2;
+                case '>=': return v1 >= v2;
+                default: return !!v1;
             }
         };
 
-        executeTokens(tokens);
+        const getBlock = () => {
+            if (tokens[i++] !== '[') throw new Error('Attendu [');
+            const block = [];
+            let bracketCount = 1;
+            while (i < tokens.length && bracketCount > 0) {
+                if (tokens[i] === '[') bracketCount++;
+                if (tokens[i] === ']') bracketCount--;
+                if (bracketCount > 0) block.push(tokens[i]);
+                i++;
+            }
+            return block;
+        };
+
+        while (i < tokens.length) {
+            const token = tokens[i++];
+
+            if (this.procedures.has(token)) {
+                const proc = this.procedures.get(token);
+                const procArgs = new Map();
+                for (const param of proc.params) {
+                    procArgs.set(param, evaluateExpression());
+                }
+                this.run(proc.body, procArgs);
+                continue;
+            }
+
+            switch (token) {
+                case 'fd':
+                case 'forward':
+                    this.turtle.forward(evaluateExpression());
+                    break;
+                case 'bk':
+                case 'back':
+                    this.turtle.back(evaluateExpression());
+                    break;
+                case 'rt':
+                case 'right':
+                    this.turtle.right(evaluateExpression());
+                    break;
+                case 'lt':
+                case 'left':
+                    this.turtle.left(evaluateExpression());
+                    break;
+                case 'pu':
+                case 'penup':
+                    this.turtle.penup();
+                    break;
+                case 'pd':
+                case 'pendown':
+                    this.turtle.pendown();
+                    break;
+                case 'cs':
+                case 'clearscreen':
+                    this.turtle.reset();
+                    break;
+                case 'home':
+                    this.turtle.home();
+                    break;
+                case 'ht':
+                case 'hideturtle':
+                    this.turtle.hideturtle();
+                    break;
+                case 'st':
+                case 'showturtle':
+                    this.turtle.showturtle();
+                    break;
+                case 'pc':
+                case 'setpencolor':
+                    this.turtle.setpencolor(resolveValue(tokens[i++]));
+                    break;
+                case 'ps':
+                case 'setpensize':
+                    this.turtle.setpensize(evaluateExpression());
+                    break;
+                case 'make':
+                    let varName = tokens[i++];
+                    if (varName.startsWith('"')) varName = varName.substring(1);
+                    const varVal = evaluateExpression();
+                    this.variables.set(varName, varVal);
+                    break;
+                case 'repeat':
+                    const count = evaluateExpression();
+                    const body = getBlock();
+                    for (let k = 0; k < count; k++) {
+                        this.run(body, localVars);
+                    }
+                    break;
+                case 'if':
+                    const ifCondBlock = getBlock();
+                    const ifBody = getBlock();
+                    if (evaluateCondition(ifCondBlock)) {
+                        this.run(ifBody, localVars);
+                    }
+                    break;
+                case 'ifelse':
+                    const ifelseCondBlock = getBlock();
+                    const trueBody = getBlock();
+                    const falseBody = getBlock();
+                    if (evaluateCondition(ifelseCondBlock)) {
+                        this.run(trueBody, localVars);
+                    } else {
+                        this.run(falseBody, localVars);
+                    }
+                    break;
+                default:
+                    throw new Error(`Commande inconnue: ${token}`);
+            }
+        }
     }
 }
 
@@ -230,7 +363,10 @@ document.addEventListener('DOMContentLoaded', () => {
         'circle': 'repeat 360 [ fd 1 rt 1 ]',
         'spiral-fixed': 'repeat 50 [ fd 100 rt 123 ]',
         'flower': 'repeat 36 [ repeat 4 [ fd 100 rt 90 ] rt 10 ]',
-        'colorful': 'pc red ps 5 fd 50 pc blue fd 50 pc green fd 50'
+        'colorful': 'pc red ps 5 fd 50 pc blue fd 50 pc green fd 50',
+        'procedure': 'to square :size\n  repeat 4 [ fd :size rt 90 ]\nend\n\nsquare 50\nsquare 100',
+        'tree': 'to tree :size\n  if [ :size > 5 ] [\n    fd :size\n    rt 20\n    tree :size - 10\n    lt 40\n    tree :size - 10\n    rt 20\n    bk :size\n  ]\nend\n\nps 2\nlt 90\npu bk 100 pd\ntree 60',
+        'polygon': 'to poly :n :size\n  repeat :n [ fd :size rt 360 / :n ]\nend\n\npoly 5 100\npoly 6 80'
     };
 
     if (examplesSelect) {
