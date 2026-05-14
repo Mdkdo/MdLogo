@@ -110,6 +110,17 @@ class LogoInterpreter {
         this.turtle = turtle;
         this.variables = new Map();
         this.procedures = new Map();
+        this.lang = 'fr';
+        this.translations = {};
+    }
+
+    setTranslations(translations, lang) {
+        this.translations = translations;
+        this.lang = lang;
+    }
+
+    t(key) {
+        return this.translations[this.lang]?.errors[key] || key;
     }
 
     execute(code) {
@@ -132,13 +143,9 @@ class LogoInterpreter {
 
     tokenize(code) {
         code = code.replace(/;.*$/gm, '');
-        // Replace brackets with spaces around them
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
-        // Replace parentheses with spaces
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
-        // Replace operators with spaces around them
         code = code.replace(/([+\-*/^><=])/g, ' $1 ');
-        // Fix back the != and <= and >= and <>
         code = code.replace(/! =/g, '!=').replace(/> =/g, '>=').replace(/< =/g, '<=').replace(/< >/g, '<>');
 
         return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
@@ -147,20 +154,22 @@ class LogoInterpreter {
     extractProcedures(tokens) {
         let i = 0;
         while (i < tokens.length) {
-            if (tokens[i] === 'to') {
+            if (tokens[i] === 'to' || tokens[i] === 'pour') {
                 const startIdx = i;
-                i++; // skip 'to'
+                i++;
                 const name = tokens[i++];
                 const params = [];
                 while (i < tokens.length && tokens[i].startsWith(':')) {
                     params.push(tokens[i++].substring(1));
                 }
                 const body = [];
-                while (i < tokens.length && tokens[i] !== 'end') {
+                while (i < tokens.length && tokens[i] !== 'end' && tokens[i] !== 'fin') {
                     body.push(tokens[i++]);
                 }
-                if (tokens[i] !== 'end') throw new Error(`Procédure non terminée: ${name}`);
-                i++; // skip 'end'
+                if (i >= tokens.length || (tokens[i] !== 'end' && tokens[i] !== 'fin')) {
+                     throw new Error(this.t('unterminated_procedure') + ': ' + name);
+                }
+                i++; // skip 'end' or 'fin'
                 this.procedures.set(name, { params, body });
                 tokens.splice(startIdx, i - startIdx);
                 i = startIdx;
@@ -174,7 +183,6 @@ class LogoInterpreter {
         let i = 0;
 
         const evaluateExpression = () => {
-            // Recursive descent parser for expressions
             const parsePrimary = () => {
                 let token = tokens[i++];
                 if (token === '(') {
@@ -183,7 +191,6 @@ class LogoInterpreter {
                     return val;
                 }
 
-                // Math functions
                 if (['sin', 'cos', 'tan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'pow'].includes(token)) {
                     const func = token;
                     if (func === 'pow') {
@@ -209,11 +216,11 @@ class LogoInterpreter {
                     const varName = token.substring(1);
                     if (localVars.has(varName)) return localVars.get(varName);
                     if (this.variables.has(varName)) return this.variables.get(varName);
-                    throw new Error(`Variable inconnue: ${varName}`);
+                    throw new Error(this.t('unknown_variable') + ': ' + varName);
                 }
 
                 const val = parseFloat(token);
-                if (isNaN(val)) return token; // String or unknown
+                if (isNaN(val)) return token;
                 return val;
             };
 
@@ -280,7 +287,7 @@ class LogoInterpreter {
         };
 
         const getBlock = () => {
-            if (tokens[i++] !== '[') throw new Error('Attendu [');
+            if (tokens[i++] !== '[') throw new Error(this.t('expected_bracket'));
             const block = [];
             let bracketCount = 1;
             while (i < tokens.length && bracketCount > 0) {
@@ -298,16 +305,18 @@ class LogoInterpreter {
             // Assignment
             if (token.startsWith(':') && i < tokens.length && tokens[i] === '=') {
                 const varName = token.substring(1);
-                i++; // skip =
+                i++;
                 const val = evaluateExpression();
                 if (localVars.has(varName)) localVars.set(varName, val);
                 else this.variables.set(varName, val);
                 continue;
             }
-            if (!['fd','forward','bk','back','rt','right','lt','left','pu','penup','pd','pendown','cs','clearscreen','home','ht','hideturtle','st','showturtle','pc','setpencolor','ps','setpensize','make','repeat','if','ifelse','to','end'].includes(token) &&
+
+            const commonCommands = ['fd','av','forward','bk','re','back','rt','td','right','lt','tg','left','pu','lc','penup','pd','bc','pendown','cs','ve','clearscreen','home','ht','ct','hideturtle','st','mt','showturtle','pc','fc','setpencolor','ps','tc','setpensize','make','donne','repeat','répète','if','si','ifelse','si_sinon','to','pour','end','fin'];
+            if (!commonCommands.includes(token) &&
                 !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
                 const varName = token;
-                i++; // skip =
+                i++;
                 const val = evaluateExpression();
                 if (localVars.has(varName)) localVars.set(varName, val);
                 else this.variables.set(varName, val);
@@ -326,30 +335,37 @@ class LogoInterpreter {
 
             switch (token) {
                 case 'fd':
+                case 'av':
                 case 'forward':
                     this.turtle.forward(evaluateExpression());
                     break;
                 case 'bk':
+                case 're':
                 case 'back':
                     this.turtle.back(evaluateExpression());
                     break;
                 case 'rt':
+                case 'td':
                 case 'right':
                     this.turtle.right(evaluateExpression());
                     break;
                 case 'lt':
+                case 'tg':
                 case 'left':
                     this.turtle.left(evaluateExpression());
                     break;
                 case 'pu':
+                case 'lc':
                 case 'penup':
                     this.turtle.penup();
                     break;
                 case 'pd':
+                case 'bc':
                 case 'pendown':
                     this.turtle.pendown();
                     break;
                 case 'cs':
+                case 've':
                 case 'clearscreen':
                     this.turtle.reset();
                     break;
@@ -357,27 +373,33 @@ class LogoInterpreter {
                     this.turtle.home();
                     break;
                 case 'ht':
+                case 'ct':
                 case 'hideturtle':
                     this.turtle.hideturtle();
                     break;
                 case 'st':
+                case 'mt':
                 case 'showturtle':
                     this.turtle.showturtle();
                     break;
                 case 'pc':
+                case 'fc':
                 case 'setpencolor':
                     this.turtle.setpencolor(evaluateExpression());
                     break;
                 case 'ps':
+                case 'tc':
                 case 'setpensize':
                     this.turtle.setpensize(evaluateExpression());
                     break;
                 case 'make':
+                case 'donne':
                     let name = tokens[i++];
                     if (name.startsWith('"')) name = name.substring(1);
                     this.variables.set(name, evaluateExpression());
                     break;
                 case 'repeat':
+                case 'répète':
                     const count = evaluateExpression();
                     const body = getBlock();
                     for (let k = 1; k <= count; k++) {
@@ -387,6 +409,7 @@ class LogoInterpreter {
                     }
                     break;
                 case 'if':
+                case 'si':
                     const ifCondBlock = getBlock();
                     const ifBody = getBlock();
                     if (evaluateCondition(ifCondBlock)) {
@@ -394,6 +417,7 @@ class LogoInterpreter {
                     }
                     break;
                 case 'ifelse':
+                case 'si_sinon':
                     const ifelseCondBlock = getBlock();
                     const trueBody = getBlock();
                     const falseBody = getBlock();
@@ -404,13 +428,13 @@ class LogoInterpreter {
                     }
                     break;
                 default:
-                    throw new Error(`Commande inconnue: ${token}`);
+                    throw new Error(this.t('unknown_command') + ': ' + token);
             }
         }
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const canvas = document.getElementById('turtle-canvas');
     const ctx = canvas.getContext('2d');
     const turtle = new Turtle(canvas, ctx);
@@ -421,27 +445,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const clearBtn = document.getElementById('clear-btn');
     const errorConsole = document.getElementById('error-console');
     const examplesSelect = document.getElementById('examples-select');
+    const langSelect = document.getElementById('lang-select');
+    const titleEl = document.querySelector('header h1');
 
-    const examples = {
-        'square': 'repeat 4 [ fd 100 rt 90 ]',
-        'circle': 'repeat 360 [ fd 1 rt 1 ]',
-        'spiral-fixed': 'repeat 50 [ fd 100 rt 123 ]',
-        'flower': 'repeat 36 [ repeat 4 [ fd 100 rt 90 ] rt 10 ]',
-        'colorful': 'pc red ps 5 fd 50 pc blue fd 50 pc green fd 50',
-        'procedure': 'to square :size\n  repeat 4 [ fd :size rt 90 ]\nend\n\nsquare 50\nsquare 100',
-        'tree': 'to tree :size\n  if [ :size > 5 ] [\n    fd :size\n    rt 20\n    tree :size - 10\n    lt 40\n    tree :size - 10\n    rt 20\n    bk :size\n  ]\nend\n\nps 2\nlt 90\npu bk 100 pd\ntree 60',
-        'math': 'angle = 0\nrepeat 300 [\n  fd 2 * sin :angle\n  rt 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\ncs home\nrepeat 100 [\n  fd sqrt :repcount * 10\n  rt 20\n]',
-        'repcount-fix': 'repeat 100 [\n   fd sqrt :repcount * 10\n   rt 20\n]'
+    let translations = {};
+    try {
+        const response = await fetch('lang.json');
+        translations = await response.json();
+    } catch (e) {
+        console.error('Failed to load translations', e);
+    }
+
+    const applyLang = (lang) => {
+        const t = translations[lang];
+        if (!t) return;
+
+        interpreter.setTranslations(translations, lang);
+        titleEl.textContent = t.title;
+        codeEditor.placeholder = t.placeholder;
+        runBtn.textContent = t.run;
+        clearBtn.textContent = t.clear;
+
+        // Update examples dropdown
+        examplesSelect.innerHTML = `<option value="">${t.choose_example}</option>`;
+        for (const [key, label] of Object.entries(t.examples)) {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = label;
+            examplesSelect.appendChild(option);
+        }
     };
 
-    if (examplesSelect) {
-        examplesSelect.addEventListener('change', (e) => {
-            const val = e.target.value;
-            if (val && examples[val]) {
-                codeEditor.value = examples[val];
-            }
-        });
-    }
+    const examples = {
+        'square': 'répète 4 [ av 100 td 90 ]',
+        'circle': 'répète 360 [ av 1 td 1 ]',
+        'spiral-fixed': 'répète 50 [ av 100 td 123 ]',
+        'flower': 'répète 36 [ répète 4 [ av 100 td 90 ] td 10 ]',
+        'colorful': 'fc red tc 5 av 50 fc blue av 50 fc green av 50',
+        'procedure': 'pour carré :taille\n  répète 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
+        'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
+        'math': 'angle = 0\nrépète 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrépète 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
+        'repcount-fix': 'répète 100 [\n   av sqrt :repcount * 10\n   td 20\n]'
+    };
+
+    langSelect.addEventListener('change', (e) => {
+        applyLang(e.target.value);
+    });
+
+    examplesSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val && examples[val]) {
+            codeEditor.value = examples[val];
+        }
+    });
 
     runBtn.addEventListener('click', () => {
         const code = codeEditor.value;
@@ -459,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         errorConsole.textContent = '';
     });
 
-    // Initial draw
+    // Default language
+    applyLang('fr');
     turtle.drawTurtle();
 });

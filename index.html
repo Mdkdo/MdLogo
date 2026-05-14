@@ -14,17 +14,12 @@
         <main>
             <div id="editor-container">
                 <div id="toolbar">
+                    <select id="lang-select">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                    </select>
                     <select id="examples-select">
                         <option value="">-- Choisir un exemple --</option>
-                        <option value="square">Carré</option>
-                        <option value="circle">Cercle</option>
-                        <option value="spiral-fixed">Spirale</option>
-                        <option value="flower">Fleur</option>
-                        <option value="colorful">Couleurs</option>
-                        <option value="procedure">Procédure (Carré)</option>
-                        <option value="tree">Arbre récursif</option>
-                        <option value="math">Fonctions Mathématiques</option>
-                        <option value="repcount-fix">Spirale (Variables)</option>
                     </select>
                 </div>
                 <textarea id="code-editor" placeholder="Entrez vos commandes Logo ici...&#10;Exemple: repeat 4 [ fd 100 rt 90 ]"></textarea>

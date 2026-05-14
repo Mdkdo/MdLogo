@@ -1,0 +1,50 @@
+{
+  "fr": {
+    "title": "Interpréteur Logo (Tortue)",
+    "placeholder": "Entrez vos commandes Logo ici...\nExemple: répète 4 [ av 100 td 90 ]",
+    "run": "Exécuter",
+    "clear": "Effacer",
+    "choose_example": "-- Choisir un exemple --",
+    "examples": {
+      "square": "Carré",
+      "circle": "Cercle",
+      "spiral-fixed": "Spirale",
+      "flower": "Fleur",
+      "colorful": "Couleurs",
+      "procedure": "Procédure (Carré)",
+      "tree": "Arbre récursif",
+      "math": "Fonctions Mathématiques",
+      "repcount-fix": "Spirale (Variables)"
+    },
+    "errors": {
+      "unknown_command": "Commande inconnue",
+      "unknown_variable": "Variable inconnue",
+      "unterminated_procedure": "Procédure non terminée",
+      "expected_bracket": "Attendu ["
+    }
+  },
+  "en": {
+    "title": "Logo Turtle Interpreter",
+    "placeholder": "Enter your Logo commands here...\nExample: repeat 4 [ fd 100 rt 90 ]",
+    "run": "Run",
+    "clear": "Clear",
+    "choose_example": "-- Choose an example --",
+    "examples": {
+      "square": "Square",
+      "circle": "Circle",
+      "spiral-fixed": "Spiral",
+      "flower": "Flower",
+      "colorful": "Colors",
+      "procedure": "Procedure (Square)",
+      "tree": "Recursive Tree",
+      "math": "Math Functions",
+      "repcount-fix": "Spiral (Variables)"
+    },
+    "errors": {
+      "unknown_command": "Unknown command",
+      "unknown_variable": "Unknown variable",
+      "unterminated_procedure": "Unterminated procedure",
+      "expected_bracket": "Expected ["
+    }
+  }
+}
