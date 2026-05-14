@@ -143,10 +143,13 @@ class LogoInterpreter {
 
     tokenize(code) {
         code = code.replace(/;.*$/gm, '');
+        // Replace brackets with spaces
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
+        // Replace parentheses with spaces
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
-        code = code.replace(/([+\-*/^><=])/g, ' $1 ');
-        code = code.replace(/! =/g, '!=').replace(/> =/g, '>=').replace(/< =/g, '<=').replace(/< >/g, '<>');
+        // Replace operators with spaces, prioritizing multi-character ones
+        // Regex: multi-char ops or single char ops
+        code = code.replace(/(>=|<=|!=|<>|[+\-*/^><=])/g, ' $1 ');
 
         return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
     }
