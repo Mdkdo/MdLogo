@@ -111,7 +111,32 @@ class LogoInterpreter {
         this.variables = new Map();
         this.procedures = new Map();
         this.lang = 'fr';
-        this.translations = {};
+        this.translations = {
+            "fr": {
+                "title": "Interpréteur Logo (Tortue)",
+                "placeholder": "Entrez vos commandes Logo ici...\nExemple: répète 4 [ av 100 td 90 ]",
+                "run": "Exécuter",
+                "clear": "Effacer",
+                "choose_example": "-- Choisir un exemple --",
+                "examples": {
+                  "square": "Carré",
+                  "circle": "Cercle",
+                  "spiral-fixed": "Spirale",
+                  "flower": "Fleur",
+                  "colorful": "Couleurs",
+                  "procedure": "Procédure (Carré)",
+                  "tree": "Arbre récursif",
+                  "math": "Fonctions Mathématiques",
+                  "repcount-fix": "Spirale (Variables)"
+                },
+                "errors": {
+                  "unknown_command": "Commande inconnue",
+                  "unknown_variable": "Variable inconnue",
+                  "unterminated_procedure": "Procédure non terminée",
+                  "expected_bracket": "Attendu ["
+                }
+            }
+        };
     }
 
     setTranslations(translations, lang) {
@@ -120,7 +145,7 @@ class LogoInterpreter {
     }
 
     t(key) {
-        return this.translations[this.lang]?.errors[key] || key;
+        return this.translations[this.lang]?.errors?.[key] || key;
     }
 
     execute(code) {
@@ -143,12 +168,8 @@ class LogoInterpreter {
 
     tokenize(code) {
         code = code.replace(/;.*$/gm, '');
-        // Replace brackets with spaces
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
-        // Replace parentheses with spaces
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
-        // Replace operators with spaces, prioritizing multi-character ones
-        // Regex: multi-char ops or single char ops
         code = code.replace(/(>=|<=|!=|<>|[+\-*/^><=])/g, ' $1 ');
 
         return code.toLowerCase().split(/\s+/).filter(t => t.length > 0);
@@ -215,7 +236,7 @@ class LogoInterpreter {
                     }
                 }
 
-                if (token.startsWith(':')) {
+                if (token && token.startsWith(':')) {
                     const varName = token.substring(1);
                     if (localVars.has(varName)) return localVars.get(varName);
                     if (this.variables.has(varName)) return this.variables.get(varName);
@@ -451,13 +472,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const langSelect = document.getElementById('lang-select');
     const titleEl = document.querySelector('header h1');
 
-    let translations = {};
-    try {
-        const response = await fetch('lang.json');
-        translations = await response.json();
-    } catch (e) {
-        console.error('Failed to load translations', e);
-    }
+    const examples = {
+        'square': 'répète 4 [ av 100 td 90 ]',
+        'circle': 'répète 360 [ av 1 td 1 ]',
+        'spiral-fixed': 'répète 50 [ av 100 td 123 ]',
+        'flower': 'répète 36 [ répète 4 [ av 100 td 90 ] td 10 ]',
+        'colorful': 'fc red tc 5 av 50 fc blue av 50 fc green av 50',
+        'procedure': 'pour carré :taille\n  répète 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
+        'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
+        'math': 'angle = 0\nrépète 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrépète 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
+        'repcount-fix': 'répète 100 [\n   av sqrt :repcount * 10\n   td 20\n]'
+    };
+
+    let translations = interpreter.translations;
 
     const applyLang = (lang) => {
         const t = translations[lang];
@@ -479,17 +506,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const examples = {
-        'square': 'répète 4 [ av 100 td 90 ]',
-        'circle': 'répète 360 [ av 1 td 1 ]',
-        'spiral-fixed': 'répète 50 [ av 100 td 123 ]',
-        'flower': 'répète 36 [ répète 4 [ av 100 td 90 ] td 10 ]',
-        'colorful': 'fc red tc 5 av 50 fc blue av 50 fc green av 50',
-        'procedure': 'pour carré :taille\n  répète 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
-        'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
-        'math': 'angle = 0\nrépète 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrépète 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
-        'repcount-fix': 'répète 100 [\n   av sqrt :repcount * 10\n   td 20\n]'
-    };
+    try {
+        const response = await fetch('lang.json');
+        if (response.ok) {
+            translations = await response.json();
+        }
+    } catch (e) {
+        console.warn('Could not load lang.json from server, using default French.', e);
+    }
 
     langSelect.addEventListener('change', (e) => {
         applyLang(e.target.value);
