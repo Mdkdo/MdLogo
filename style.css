@@ -151,7 +151,7 @@ canvas {
     height: auto;
 }
 
-#error-console {
+#output-console {
     height: 80px;
     background-color: #1a1a1a;
     color: #ff6b6b;
@@ -160,6 +160,11 @@ canvas {
     font-size: 14px;
     overflow-y: auto;
     border-top: 3px solid #c0392b;
+    white-space: pre-wrap;
+}
+
+#output-console .info {
+    color: #4caf50;
 }
 
 /* Responsiveness */

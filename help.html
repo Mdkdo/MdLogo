@@ -147,6 +147,56 @@
                 <td>Trace un arc de cercle de rayon r</td>
                 <td><code>arc 360 50</code></td>
             </tr>
+            <tr>
+                <td><code>rectangle [x1] [y1] [x2] [y2]</code></td>
+                <td><code>rectangle [x1] [y1] [x2] [y2]</code></td>
+                <td>Trace un rectangle</td>
+                <td><code>rectangle 10 10 100 50</code></td>
+            </tr>
+            <tr>
+                <td><code>cercle [r]</code></td>
+                <td><code>circle [r]</code></td>
+                <td>Trace un cercle de rayon r</td>
+                <td><code>cercle 50</code></td>
+            </tr>
+            <tr>
+                <td><code>ligne [x1] [y1] [x2] [y2]</code></td>
+                <td><code>line [x1] [y1] [x2] [y2]</code></td>
+                <td>Trace une ligne entre deux points</td>
+                <td><code>ligne 0 0 100 100</code></td>
+            </tr>
+            <tr>
+                <td><code>ellipse [x1] [y1] [x2] [y2]</code></td>
+                <td><code>ellipse [x1] [y1] [x2] [y2]</code></td>
+                <td>Trace une ellipse dans un rectangle</td>
+                <td><code>ellipse 50 50 200 100</code></td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>2. Multimédia</h2>
+        <table>
+            <tr>
+                <th>Français</th>
+                <th>Anglais</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>joueson [url]</code></td>
+                <td><code>playsound [url]</code></td>
+                <td>Joue un fichier audio</td>
+            </tr>
+            <tr>
+                <td><code>montreimage [url]</code></td>
+                <td><code>showimage [url]</code></td>
+                <td>Affiche une image à la position de la tortue</td>
+            </tr>
+            <tr>
+                <td><code>montrevideo [url]</code></td>
+                <td><code>showvideo [url]</code></td>
+                <td>Affiche une vidéo à la position de la tortue</td>
+            </tr>
         </table>
     </section>
 
@@ -202,7 +252,49 @@
     </section>
 
     <section>
-        <h2>3. Structures de contrôle</h2>
+        <h2>3. Listes et Tableaux</h2>
+        <table>
+            <tr>
+                <th>Français</th>
+                <th>Anglais</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>élément [index] [liste]</code></td>
+                <td><code>item [index] [list]</code></td>
+                <td>Récupère l'élément à l'index n (commence à 1)</td>
+            </tr>
+            <tr>
+                <td><code>fixeélément [index] [nom_liste] [valeur]</code></td>
+                <td><code>setitem [index] [list_name] [value]</code></td>
+                <td>Modifie un élément de la liste</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>4. Événements</h2>
+        <table>
+            <tr>
+                <th>Français</th>
+                <th>Anglais</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>quand_clic [bloc]</code></td>
+                <td><code>onclick [block]</code></td>
+                <td>Exécute le bloc lors d'un clic sur le canevas. Variables <code>:mousex</code> et <code>:mousey</code> disponibles.</td>
+            </tr>
+            <tr>
+                <td><code>quand_touche [touche] [bloc]</code></td>
+                <td><code>onkey [key] [block]</code></td>
+                <td>Exécute le bloc quand une touche est pressée.</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>5. Structures de contrôle</h2>
         <h3>Boucles : répète / repete (repeat)</h3>
         <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle.</p>
         <pre>répète 4 [ av 100 td 90 ]</pre>

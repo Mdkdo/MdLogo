@@ -15,7 +15,10 @@
       "tree": "Arbre récursif",
       "math": "Fonctions Mathématiques",
       "repcount-fix": "Spirale (Variables)",
-      "text": "Texte et Logique"
+      "text": "Texte et Logique",
+      "drawing": "Formes Géométriques",
+      "events": "Événements Souris/Clavier",
+      "array": "Tableaux et Listes"
     },
     "errors": {
       "unknown_command": "Commande inconnue",
@@ -40,7 +43,10 @@
       "tree": "Recursive Tree",
       "math": "Math Functions",
       "repcount-fix": "Spiral (Variables)",
-      "text": "Text and Logic"
+      "text": "Text and Logic",
+      "drawing": "Geometric Shapes",
+      "events": "Mouse/Keyboard Events",
+      "array": "Arrays and Lists"
     },
     "errors": {
       "unknown_command": "Unknown command",

@@ -29,6 +29,8 @@ class Turtle {
     }
 
     setxy(x, y) {
+        x = parseFloat(x);
+        y = parseFloat(y);
         if (this.penDown) {
             this.ctx.beginPath();
             this.ctx.moveTo(this.x, this.y);
@@ -43,16 +45,54 @@ class Turtle {
     }
 
     setheading(angleDegrees) {
-        this.angle = (angleDegrees * Math.PI) / 180 - Math.PI / 2;
+        this.angle = (parseFloat(angleDegrees) * Math.PI) / 180 - Math.PI / 2;
     }
 
     arc(angleDegrees, radius) {
         if (!this.penDown) return;
         this.ctx.beginPath();
-        // Logo arcs are usually centered on the turtle and start from current heading
-        // But some implementations draw it differently.
-        // Let's implement it as: draw an arc with radius R, covering angle A.
-        this.ctx.arc(this.x, this.y, radius, this.angle, this.angle + (angleDegrees * Math.PI) / 180, angleDegrees < 0);
+        this.ctx.arc(this.x, this.y, parseFloat(radius), this.angle, this.angle + (parseFloat(angleDegrees) * Math.PI) / 180, angleDegrees < 0);
+        this.ctx.strokeStyle = this.color;
+        this.ctx.lineWidth = this.width;
+        this.ctx.stroke();
+    }
+
+    rectangle(x1, y1, x2, y2) {
+        if (!this.penDown) return;
+        this.ctx.beginPath();
+        this.ctx.rect(parseFloat(x1), parseFloat(y1), parseFloat(x2) - parseFloat(x1), parseFloat(y2) - parseFloat(y1));
+        this.ctx.strokeStyle = this.color;
+        this.ctx.lineWidth = this.width;
+        this.ctx.stroke();
+    }
+
+    circle(r) {
+        if (!this.penDown) return;
+        this.ctx.beginPath();
+        this.ctx.arc(this.x, this.y, parseFloat(r), 0, 2 * Math.PI);
+        this.ctx.strokeStyle = this.color;
+        this.ctx.lineWidth = this.width;
+        this.ctx.stroke();
+    }
+
+    line(x1, y1, x2, y2) {
+        if (!this.penDown) return;
+        this.ctx.beginPath();
+        this.ctx.moveTo(parseFloat(x1), parseFloat(y1));
+        this.ctx.lineTo(parseFloat(x2), parseFloat(y2));
+        this.ctx.strokeStyle = this.color;
+        this.ctx.lineWidth = this.width;
+        this.ctx.stroke();
+    }
+
+    ellipse(x1, y1, x2, y2) {
+        if (!this.penDown) return;
+        this.ctx.beginPath();
+        const rx = Math.abs(parseFloat(x2) - parseFloat(x1)) / 2;
+        const ry = Math.abs(parseFloat(y2) - parseFloat(y1)) / 2;
+        const cx = (parseFloat(x1) + parseFloat(x2)) / 2;
+        const cy = (parseFloat(y1) + parseFloat(y2)) / 2;
+        this.ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -126,6 +166,7 @@ class Turtle {
         const s = (text === null || text === undefined) ? "" : String(text);
         this.ctx.fillText(s, 0, 0);
         this.ctx.restore();
+        this.forward(this.ctx.measureText(s).width + 5);
     }
 
     drawTurtle() {
@@ -157,6 +198,10 @@ class LogoInterpreter {
         this.turtle = turtle;
         this.variables = new Map();
         this.procedures = new Map();
+        this.eventHandlers = {
+            click: null,
+            keydown: new Map()
+        };
         this.lang = 'fr';
         this.translations = {
             "fr": {
@@ -198,6 +243,8 @@ class LogoInterpreter {
     execute(code) {
         this.variables.clear();
         this.procedures.clear();
+        this.eventHandlers.click = null;
+        this.eventHandlers.keydown.clear();
         this.turtle.reset();
 
         const tokens = this.tokenize(code);
@@ -213,18 +260,30 @@ class LogoInterpreter {
         }
     }
 
+    runEvent(body) {
+        try {
+            this.run(body, new Map());
+            this.turtle.drawTurtle();
+        } catch (e) {
+            console.error("Event execution error:", e);
+        }
+    }
+
     tokenize(code) {
         code = code.replace(/;.*$/gm, '');
+        // Preserve brackets, parentheses, and commas
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
+        code = code.replace(/,/g, ' , ');
 
         const initialTokens = code.split(/\s+/).filter(t => t.length > 0);
         const finalTokens = [];
 
         for (let token of initialTokens) {
-            if (token.startsWith('"') || token === '[' || token === ']' || token === '(' || token === ')') {
+            if (token.startsWith('"') || token === '[' || token === ']' || token === '(' || token === ')' || token === ',') {
                 finalTokens.push(token);
             } else {
+                // Split by operators but keep the operators
                 const subTokens = token.split(/(>=|<=|!=|<>|[+\-*/^><=])/g).filter(t => t.length > 0);
                 finalTokens.push(...subTokens);
             }
@@ -234,15 +293,31 @@ class LogoInterpreter {
 
     extractProcedures(tokens) {
         let i = 0;
+        const skipSeps = () => {
+            while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',' || tokens[i] === ')')) i++;
+        };
+
         while (i < tokens.length) {
             const token = tokens[i].toLowerCase();
             if (token === 'to' || token === 'pour') {
                 const startIdx = i;
                 i++;
+                skipSeps();
                 const name = tokens[i++].toLowerCase();
                 const params = [];
-                while (i < tokens.length && tokens[i].startsWith(':')) {
-                    params.push(tokens[i++].substring(1).toLowerCase());
+                while (i < tokens.length) {
+                    skipSeps();
+                    if (tokens[i] && tokens[i].startsWith(':')) {
+                        params.push(tokens[i++].substring(1).toLowerCase());
+                    } else if (tokens[i] && tokens[i] === '[') {
+                        break; // End of params, start of body (if not using traditional format)
+                    } else if (tokens[i] && (tokens[i].toLowerCase() === 'end' || tokens[i].toLowerCase() === 'fin')) {
+                        break;
+                    } else {
+                        // In some dialects, parameters don't have : in definition
+                        // but let's stick to standard Logo for now or just break
+                        break;
+                    }
                 }
                 const body = [];
                 while (i < tokens.length && tokens[i].toLowerCase() !== 'end' && tokens[i].toLowerCase() !== 'fin') {
@@ -364,22 +439,45 @@ class LogoInterpreter {
                 if (token === '[') {
                     i--; // Put back [ so getBlock can handle it
                     const s = getBlock().join(' ');
-                    const n = parseFloat(s);
-                    return isNaN(n) ? s : n;
+                    // Only convert to number if it's a single number string
+                    if (/^-?\d+(\.\d+)?$/.test(s.trim())) {
+                        return parseFloat(s);
+                    }
+                    return s;
                 }
 
                 if (token === '(') {
                     let val = parseExpression();
-                    if (tokens[i++] !== ')') throw new Error('Attendu )');
+                    if (tokens[i] === ')') i++;
                     return val;
+                }
+
+                if (token === ',' || token === ')') {
+                    return parsePrimary();
                 }
 
                 if (lowerToken === 'not' || lowerToken === 'non') {
                     return !parsePrimary();
                 }
 
-                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max'].includes(lowerToken)) {
+                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'taille', 'count'].includes(lowerToken)) {
                     const func = lowerToken;
+                    if (func === 'élément' || func === 'item') {
+                        const idx = parsePrimary();
+                        const list = parsePrimary();
+                        if (typeof list === 'string') {
+                            const arr = list.trim().split(/\s+/);
+                            return arr[idx - 1];
+                        }
+                        return list;
+                    }
+                    if (func === 'taille' || func === 'count') {
+                        const list = parsePrimary();
+                        if (typeof list === 'string') {
+                            return list.trim().split(/\s+/).length;
+                        }
+                        return 0;
+                    }
                     if (func === 'pow') {
                         const base = parsePrimary();
                         const exponent = parsePrimary();
@@ -453,8 +551,16 @@ class LogoInterpreter {
 
                 if (lowerToken === 'pi') return Math.PI;
 
+                if (token === ',') return undefined; // Skip commas in expressions
+
                 const val = parseFloat(token);
-                if (isNaN(val)) return token; // String (can be case sensitive)
+                if (isNaN(val)) {
+                    // Check if it's a variable even without :
+                    const varName = token.toLowerCase();
+                    if (localVars.has(varName)) return localVars.get(varName);
+                    if (this.variables.has(varName)) return this.variables.get(varName);
+                    return token; // String literal or unknown
+                }
                 return val;
             };
 
@@ -504,6 +610,10 @@ class LogoInterpreter {
             const token = rawToken.toLowerCase();
 
             // Assignment
+            if (rawToken === '(' || rawToken === ',' || rawToken === ')') {
+                continue;
+            }
+
             if (rawToken.startsWith(':') && i < tokens.length && tokens[i] === '=') {
                 const varName = rawToken.substring(1).toLowerCase();
                 i++;
@@ -520,9 +630,11 @@ class LogoInterpreter {
                 'ps', 'tc', 'fep', 'setpensize', 'fixeépaisseurpinceau', 'make', 'donne', 'repeat', 'repete', 'répète',
                 'if', 'si', 'ifelse', 'si_sinon', 'to', 'pour', 'end', 'fin',
                 'ecris', 'write', 'label', 'print', 'affiche', 'police', 'font',
-                'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf'
+                'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf',
+                'rectangle', 'cercle', 'circle', 'ligne', 'line', 'ellipse', 'joueson', 'playsound', 'montreimage', 'showimage', 'montrevideo', 'showvideo',
+                'élément', 'item', 'fixeélément', 'setitem', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
             ];
-            const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos'];
+            const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item'];
 
             if (!commonCommands.includes(token) && !functions.includes(token) &&
                 !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
@@ -632,6 +744,76 @@ class LogoInterpreter {
                 case 'arc':
                     this.turtle.arc(evaluateExpression(), evaluateExpression());
                     break;
+                case 'rectangle':
+                    this.turtle.rectangle(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                    break;
+                case 'cercle':
+                case 'circle':
+                    this.turtle.circle(evaluateExpression());
+                    break;
+                case 'ligne':
+                case 'line':
+                    this.turtle.line(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                    break;
+                case 'ellipse':
+                    this.turtle.ellipse(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                    break;
+                case 'joueson':
+                case 'playsound':
+                    const soundUrl = evaluateExpression();
+                    new Audio(soundUrl).play().catch(e => console.error("Audio error:", e));
+                    break;
+                case 'montreimage':
+                case 'showimage':
+                    const imgUrl = evaluateExpression();
+                    const img = new Image();
+                    img.onload = () => this.turtle.ctx.drawImage(img, this.turtle.x, this.turtle.y);
+                    img.src = imgUrl;
+                    break;
+                case 'montrevideo':
+                case 'showvideo':
+                    const videoUrl = evaluateExpression();
+                    const video = document.createElement('video');
+                    video.src = videoUrl;
+                    video.autoplay = true;
+                    video.onplay = () => {
+                        const draw = () => {
+                            if (!video.paused && !video.ended) {
+                                this.turtle.ctx.drawImage(video, this.turtle.x, this.turtle.y, 200, 150);
+                                requestAnimationFrame(draw);
+                            }
+                        };
+                        draw();
+                    };
+                    break;
+                case 'élément':
+                case 'item':
+                    // This is handled in expressions mostly, but as a command it might not make sense unless printing
+                    console.log(evaluateExpression());
+                    break;
+                case 'fixeélément':
+                case 'setitem':
+                    const index = evaluateExpression();
+                    let listName = tokens[i++];
+                    if (listName.startsWith('"')) listName = listName.substring(1).toLowerCase();
+                    const newVal = evaluateExpression();
+                    let list = localVars.get(listName) || this.variables.get(listName);
+                    if (typeof list === 'string') {
+                        let arr = list.trim().split(/\s+/);
+                        arr[index - 1] = newVal;
+                        if (localVars.has(listName)) localVars.set(listName, arr.join(' '));
+                        else this.variables.set(listName, arr.join(' '));
+                    }
+                    break;
+                case 'quand_clic':
+                case 'onclick':
+                    this.eventHandlers.click = getBlock();
+                    break;
+                case 'quand_touche':
+                case 'onkey':
+                    const key = evaluateExpression().toLowerCase();
+                    this.eventHandlers.keydown.set(key, getBlock());
+                    break;
                 case 'ht':
                 case 'ct':
                 case 'hideturtle':
@@ -660,8 +842,10 @@ class LogoInterpreter {
                     break;
                 case 'make':
                 case 'donne':
+                    while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
                     let name = tokens[i++];
                     if (name.startsWith('"')) name = name.substring(1).toLowerCase();
+                    else name = name.toLowerCase();
                     this.variables.set(name, evaluateExpression());
                     break;
                 case 'repeat':
@@ -699,7 +883,9 @@ class LogoInterpreter {
                 case 'label':
                 case 'print':
                 case 'affiche':
-                    this.turtle.write(evaluateExpression());
+                    const msg = evaluateExpression();
+                    this.turtle.write(msg);
+                    if (window.logToConsole) window.logToConsole(String(msg));
                     break;
                 case 'police':
                 case 'font':
@@ -717,6 +903,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ctx = canvas.getContext('2d');
     const turtle = new Turtle(canvas, ctx);
     const interpreter = new LogoInterpreter(turtle);
+    const outputConsole = document.getElementById('output-console');
+
+    const logToConsole = (msg, isError = false) => {
+        const div = document.createElement('div');
+        div.textContent = msg;
+        if (!isError) div.className = 'info';
+        outputConsole.appendChild(div);
+        outputConsole.scrollTop = outputConsole.scrollHeight;
+    };
+    window.logToConsole = logToConsole;
+
+    canvas.addEventListener('click', (e) => {
+        if (interpreter.eventHandlers.click) {
+            // Set mouse vars
+            const rect = canvas.getBoundingClientRect();
+            interpreter.variables.set('mousex', e.clientX - rect.left);
+            interpreter.variables.set('mousey', e.clientY - rect.top);
+            interpreter.runEvent(interpreter.eventHandlers.click);
+        }
+    });
+
+    window.addEventListener('keydown', (e) => {
+        const key = e.key.toLowerCase();
+        if (interpreter.eventHandlers.keydown.has(key)) {
+            interpreter.runEvent(interpreter.eventHandlers.keydown.get(key));
+        }
+    });
 
     const codeEditor = document.getElementById('code-editor');
     const runBtn = document.getElementById('run-btn');
@@ -736,7 +949,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
         'math': 'angle = 0\nrepete 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrepete 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
         'repcount-fix': 'repete 100 [\n   av sqrt :repcount * 10\n   td 20\n]',
-        'text': 'police "bold_20px_Arial\necris "Bonjour\nav 50\nfc red\npolice "italic_16px_Courier\necris [Le Logo est puissant !]\nre 50 td 90 av 100\nsi [ (1 = 1) et (non (1 > 2)) ] [\n  ecris "Logique_OK\n]'
+        'text': 'police "bold_20px_Arial\necris "Bonjour\nav 50\nfc red\npolice "italic_16px_Courier\necris [Le Logo est puissant !]\nre 50 td 90 av 100\nsi [ (1 = 1) et (non (1 > 2)) ] [\n  ecris "Logique_OK\n]',
+        'drawing': 'fc blue tc 3\nrectangle 50 50 150 100\nfc red\ncercle 50\nfc green\nligne 0 0 300 300\nellipse 200 200 400 300',
+        'events': 'ecris [Cliquez sur le canevas ou appuyez sur une touche]\n\nquand_clic [\n  fc hasard 1000000\n  setpos [mousex mousey]\n  cercle 20\n]\n\nquand_touche "a [\n  ecris "Touche_A_appuyée\n]',
+        'array': 'ma_liste = [10 20 30 40]\necris ma_liste\necris [Le 2ème élément est :]\necris élément 2 ma_liste\n\nfixeélément 2 ma_liste 99\necris [Liste modifiée :]\necris ma_liste'
     };
 
     let translations = interpreter.translations;
@@ -783,18 +999,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     runBtn.addEventListener('click', () => {
         const code = codeEditor.value;
-        errorConsole.textContent = '';
+        outputConsole.textContent = '';
         try {
             interpreter.execute(code);
         } catch (e) {
-            errorConsole.textContent = 'Erreur: ' + e.message;
+            logToConsole('Erreur: ' + e.message, true);
         }
     });
 
     clearBtn.addEventListener('click', () => {
         turtle.reset();
         turtle.drawTurtle();
-        errorConsole.textContent = '';
+        outputConsole.textContent = '';
     });
 
     // Default language
