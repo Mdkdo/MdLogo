@@ -175,7 +175,53 @@
     </section>
 
     <section>
-        <h2>2. Multimédia</h2>
+        <h2>3. Couleurs et Styles</h2>
+        <table>
+            <tr>
+                <th>Français</th>
+                <th>Anglais / English</th>
+                <th>Description</th>
+                <th>Exemple</th>
+            </tr>
+            <tr>
+                <td><code>fc [nom]</code></td>
+                <td><code>pc [name]</code></td>
+                <td>Change la couleur du crayon. Noms français supportés.</td>
+                <td><code>fc "rouge</code></td>
+            </tr>
+            <tr>
+                <td><code>fcl [nom]</code></td>
+                <td><code>fillcolor [name]</code></td>
+                <td>Change la couleur de remplissage.</td>
+                <td><code>fcl "bleu</code></td>
+            </tr>
+            <tr>
+                <td><code>remplit</code></td>
+                <td><code>fill</code></td>
+                <td>Remplit la forme fermée actuelle avec la couleur de remplissage.</td>
+                <td><code>remplit</code></td>
+            </tr>
+            <tr>
+                <td><code>fcc [nom]</code></td>
+                <td><code>canvascolor [name]</code></td>
+                <td>Change la couleur de fond du canevas.</td>
+                <td><code>fcc "gris</code></td>
+            </tr>
+            <tr>
+                <td><code>rvb [r] [v] [b]</code></td>
+                <td><code>rgb [r] [g] [b]</code></td>
+                <td>Crée une couleur à partir des composantes Rouge, Vert, Bleu (0-255).</td>
+                <td><code>fc rvb 255 0 0</code></td>
+            </tr>
+            <tr>
+                <td><b>Couleurs FR</b></td>
+                <td colspan="3">rouge, vert, bleu, jaune, noir, blanc, gris, marron, orange, rose, violet, cyan, magenta.</td>
+            </tr>
+        </table>
+    </section>
+
+    <section>
+        <h2>4. Multimédia</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -205,7 +251,7 @@
     </section>
 
     <section>
-        <h2>3. Gestion du crayon et de la tortue</h2>
+        <h2>5. Gestion du crayon et de la tortue</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -221,11 +267,6 @@
                 <td><code>bc</code></td>
                 <td><code>pd</code></td>
                 <td>Baisse le crayon (dessine en bougeant)</td>
-            </tr>
-            <tr>
-                <td><code>fc [couleur]</code></td>
-                <td><code>pc [color]</code></td>
-                <td>Fixe la couleur du crayon (ex: red, blue, #FF0000)</td>
             </tr>
             <tr>
                 <td><code>tc [n]</code></td>
@@ -256,7 +297,7 @@
     </section>
 
     <section>
-        <h2>4. Listes et Tableaux (Déclaration, Initialisation, Manipulation)</h2>
+        <h2>6. Listes et Tableaux (Déclaration, Initialisation, Manipulation)</h2>
         <p>En Logo, un tableau est représenté par une liste entre crochets <code>[ ]</code>. Les index commencent à 1.</p>
         <table>
             <tr>
@@ -305,7 +346,7 @@
     </section>
 
     <section>
-        <h2>5. Événements</h2>
+        <h2>7. Événements</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -326,7 +367,7 @@
     </section>
 
     <section>
-        <h2>6. Structures de contrôle</h2>
+        <h2>8. Structures de contrôle</h2>
         <h3>Boucles : répète / repete (repeat)</h3>
         <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle.</p>
         <pre>répète 4 [ av 100 td 90 ]</pre>
@@ -347,7 +388,7 @@
     </section>
 
     <section>
-        <h2>7. Variables et Affectations</h2>
+        <h2>9. Variables et Affectations</h2>
         <p>Syntaxe standard Logo : <code>donne "nom valeur</code> (anglais: <code>make</code>)</p>
         <p>Syntaxe moderne : <code>nom = valeur</code></p>
         <pre>taille = 100
@@ -355,7 +396,7 @@ av :taille</pre>
     </section>
 
     <section>
-        <h2>8. Procédures</h2>
+        <h2>10. Procédures</h2>
         <p>Créez des fonctions réutilisables avec <code>pour [nom] [paramètres] ... fin</code>.</p>
         <pre>pour carré :taille
   répète 4 [ av :taille td 90 ]
@@ -363,7 +404,7 @@ fin</pre>
     </section>
 
     <section>
-        <h2>9. Expressions et Fonctions Mathématiques</h2>
+        <h2>11. Expressions et Fonctions Mathématiques</h2>
         <p>Support des parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
         <h3>Fonctions disponibles :</h3>
         <table>

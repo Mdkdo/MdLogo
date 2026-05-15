@@ -144,8 +144,23 @@ class Turtle {
         this.visible = true;
     }
 
+    translateColor(color) {
+        if (typeof color !== 'string') return color;
+        const colors = {
+            'rouge': 'red', 'vert': 'green', 'bleu': 'blue', 'jaune': 'yellow',
+            'noir': 'black', 'blanc': 'white', 'gris': 'gray', 'marron': 'brown',
+            'orange': 'orange', 'rose': 'pink', 'violet': 'purple', 'cyan': 'cyan',
+            'magenta': 'magenta', 'foncé': 'dark', 'clair': 'light'
+        };
+        let c = color.toLowerCase();
+        for (const [fr, en] of Object.entries(colors)) {
+            c = c.replace(fr, en);
+        }
+        return c;
+    }
+
     setpencolor(color) {
-        this.color = color;
+        this.color = this.translateColor(color);
     }
 
     setpensize(size) {
@@ -211,21 +226,15 @@ class LogoInterpreter {
                 "clear": "Effacer",
                 "choose_example": "-- Choisir un exemple --",
                 "examples": {
-                  "square": "Carré",
-                  "circle": "Cercle",
-                  "spiral-fixed": "Spirale",
-                  "flower": "Fleur",
-                  "colorful": "Couleurs",
-                  "procedure": "Procédure (Carré)",
-                  "tree": "Arbre récursif",
-                  "math": "Fonctions Mathématiques",
-                  "repcount-fix": "Spirale (Variables)"
+                  "square": "Carré", "circle": "Cercle", "spiral-fixed": "Spirale", "flower": "Fleur",
+                  "colorful": "Couleurs", "procedure": "Procédure (Carré)", "tree": "Arbre récursif",
+                  "math": "Fonctions Mathématiques", "repcount-fix": "Spirale (Variables)",
+                  "text": "Texte et Logique", "drawing": "Formes Géométriques", "events": "Événements Souris/Clavier",
+                  "array": "Tableaux et Listes", "multimedia": "Multimédia (Vidéo/Image)"
                 },
                 "errors": {
-                  "unknown_command": "Commande inconnue",
-                  "unknown_variable": "Variable inconnue",
-                  "unterminated_procedure": "Procédure non terminée",
-                  "expected_bracket": "Attendu ["
+                  "unknown_command": "Commande inconnue", "unknown_variable": "Variable inconnue",
+                  "unterminated_procedure": "Procédure non terminée", "expected_bracket": "Attendu ["
                 }
             }
         };
@@ -460,8 +469,14 @@ class LogoInterpreter {
                     return !parsePrimary();
                 }
 
-                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'list_taille', 'list_size'].includes(lowerToken)) {
+                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'list_taille', 'list_size', 'rvb', 'rgb'].includes(lowerToken)) {
                     const func = lowerToken;
+                    if (func === 'rvb' || func === 'rgb') {
+                        const r = parsePrimary();
+                        const g = parsePrimary();
+                        const b = parsePrimary();
+                        return `rgb(${r},${g},${b})`;
+                    }
                     if (func === 'élément' || func === 'item') {
                         const idx = parsePrimary();
                         const list = parsePrimary();
@@ -770,7 +785,7 @@ class LogoInterpreter {
                     break;
                 case 'setbg':
                 case 'fccf':
-                    this.turtle.canvas.style.backgroundColor = evaluateExpression();
+                    this.turtle.canvas.style.backgroundColor = this.turtle.translateColor(evaluateExpression());
                     break;
                 case 'setx':
                 case 'faisx':
@@ -1049,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'circle': 'repete 360 [ av 1 td 1 ]',
         'spiral-fixed': 'repete 50 [ av 100 td 123 ]',
         'flower': 'repete 36 [ repete 4 [ av 100 td 90 ] td 10 ]',
-        'colorful': 'fc red tc 5 av 50 fc blue av 50 fc green av 50',
+        'colorful': 'fc "rouge tc 5 av 50 fc "bleu av 50 fc rvb 0 255 0 av 50',
         'procedure': 'pour carré :taille\n  repete 4 [ av :taille td 90 ]\nfin\n\ncarré 50\ncarré 100',
         'tree': 'pour arbre :taille\n  si [ :taille > 5 ] [\n    av :taille\n    td 20\n    arbre :taille - 10\n    tg 40\n    arbre :taille - 10\n    td 20\n    re :taille\n  ]\nfin\n\ntc 2\ntg 90\nlc re 100 bc\narbre 60',
         'math': 'angle = 0\nrepete 300 [\n  av 2 * sin :angle\n  td 2\n  angle = :angle + 2\n]\n\n; Spirale avec repcount\nve home\nrepete 100 [\n  av sqrt :repcount * 10\n  td 20\n]',
