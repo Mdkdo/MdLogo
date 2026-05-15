@@ -312,16 +312,28 @@ class LogoInterpreter {
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
         code = code.replace(/,/g, ' , ');
 
-        const initialTokens = code.split(/\s+/).filter(t => t.length > 0);
+        const initialWords = code.split(/\s+/).filter(t => t.length > 0);
         const finalTokens = [];
 
-        for (let token of initialTokens) {
-            if (token.startsWith('"') || token === '[' || token === ']' || token === '(' || token === ')' || token === ',') {
-                finalTokens.push(token);
-            } else {
-                // Split by operators but keep the operators
-                const subTokens = token.split(/(>=|<=|!=|<>|[+\-*/^><=])/g).filter(t => t.length > 0);
-                finalTokens.push(...subTokens);
+        for (let word of initialWords) {
+            if (word.startsWith('"') || word === '[' || word === ']' || word === '(' || word === ')' || word === ',') {
+                finalTokens.push(word);
+                continue;
+            }
+
+            // Split by operators but keep them
+            const sub = word.split(/(>=|<=|!=|<>|[+\-*/^><=])/g).filter(t => t.length > 0);
+
+            // Post-process to handle negative numbers as single tokens if they were one word
+            for (let j = 0; j < sub.length; j++) {
+                if (sub[j] === '-' && j + 1 < sub.length && /^\d/.test(sub[j+1])) {
+                    if (j === 0) {
+                        finalTokens.push("-" + sub[j+1]);
+                        j++;
+                        continue;
+                    }
+                }
+                finalTokens.push(sub[j]);
             }
         }
         return finalTokens;
@@ -663,6 +675,10 @@ class LogoInterpreter {
             return token;
         };
 
+        const skipSep = () => {
+            while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
+        };
+
         while (i < tokens.length) {
             const rawToken = tokens[i++];
             const token = rawToken.toLowerCase();
@@ -807,6 +823,7 @@ class LogoInterpreter {
                             this.turtle.setxy(parts[0], parts[1]);
                         }
                     } else {
+                        skipSep();
                         this.turtle.setxy(val1, evaluateExpression());
                     }
                     break;
@@ -829,23 +846,41 @@ class LogoInterpreter {
                 case 'fixecap':
                     this.turtle.setheading(evaluateExpression());
                     break;
-                case 'arc':
-                    this.turtle.arc(evaluateExpression(), evaluateExpression());
+                case 'arc': {
+                    const a1 = evaluateExpression();
+                    skipSep();
+                    this.turtle.arc(a1, evaluateExpression());
                     break;
-                case 'rectangle':
-                    this.turtle.rectangle(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                }
+                case 'rectangle': {
+                    const x1 = evaluateExpression(); skipSep();
+                    const y1 = evaluateExpression(); skipSep();
+                    const x2 = evaluateExpression(); skipSep();
+                    const y2 = evaluateExpression();
+                    this.turtle.rectangle(x1, y1, x2, y2);
                     break;
+                }
                 case 'cercle':
                 case 'circle':
                     this.turtle.circle(evaluateExpression());
                     break;
                 case 'ligne':
-                case 'line':
-                    this.turtle.line(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                case 'line': {
+                    const lx1 = evaluateExpression(); skipSep();
+                    const ly1 = evaluateExpression(); skipSep();
+                    const lx2 = evaluateExpression(); skipSep();
+                    const ly2 = evaluateExpression();
+                    this.turtle.line(lx1, ly1, lx2, ly2);
                     break;
-                case 'ellipse':
-                    this.turtle.ellipse(evaluateExpression(), evaluateExpression(), evaluateExpression(), evaluateExpression());
+                }
+                case 'ellipse': {
+                    const ex1 = evaluateExpression(); skipSep();
+                    const ey1 = evaluateExpression(); skipSep();
+                    const ex2 = evaluateExpression(); skipSep();
+                    const ey2 = evaluateExpression();
+                    this.turtle.ellipse(ex1, ey1, ex2, ey2);
                     break;
+                }
                 case 'joueson':
                 case 'playsound':
                     const soundUrl = evaluateExpression();
