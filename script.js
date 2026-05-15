@@ -28,6 +28,36 @@ class Turtle {
         this.angle = -Math.PI / 2;
     }
 
+    setxy(x, y) {
+        if (this.penDown) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(this.x, this.y);
+            this.ctx.lineTo(x, y);
+            this.ctx.strokeStyle = this.color;
+            this.ctx.lineWidth = this.width;
+            this.ctx.lineCap = 'round';
+            this.ctx.stroke();
+        }
+        this.x = x;
+        this.y = y;
+    }
+
+    setheading(angleDegrees) {
+        this.angle = (angleDegrees * Math.PI) / 180 - Math.PI / 2;
+    }
+
+    arc(angleDegrees, radius) {
+        if (!this.penDown) return;
+        this.ctx.beginPath();
+        // Logo arcs are usually centered on the turtle and start from current heading
+        // But some implementations draw it differently.
+        // Let's implement it as: draw an arc with radius R, covering angle A.
+        this.ctx.arc(this.x, this.y, radius, this.angle, this.angle + (angleDegrees * Math.PI) / 180, angleDegrees < 0);
+        this.ctx.strokeStyle = this.color;
+        this.ctx.lineWidth = this.width;
+        this.ctx.stroke();
+    }
+
     forward(distance) {
         const newX = this.x + distance * Math.cos(this.angle);
         const newY = this.y + distance * Math.sin(this.angle);
@@ -92,7 +122,9 @@ class Turtle {
         this.ctx.rotate(this.angle + Math.PI / 2);
         this.ctx.font = this.font;
         this.ctx.fillStyle = this.color;
-        this.ctx.fillText(text, 0, 0);
+        // If text is a number, convert to string. If null/undefined, use empty string.
+        const s = (text === null || text === undefined) ? "" : String(text);
+        this.ctx.fillText(s, 0, 0);
         this.ctx.restore();
     }
 
@@ -185,10 +217,19 @@ class LogoInterpreter {
         code = code.replace(/;.*$/gm, '');
         code = code.replace(/\[/g, ' [ ').replace(/\]/g, ' ] ');
         code = code.replace(/\(/g, ' ( ').replace(/\)/g, ' ) ');
-        code = code.replace(/(>=|<=|!=|<>|[+\-*/^><=])/g, ' $1 ');
 
-        // Use a better way to split while keeping case for strings but lowercasing for commands
-        return code.split(/\s+/).filter(t => t.length > 0);
+        const initialTokens = code.split(/\s+/).filter(t => t.length > 0);
+        const finalTokens = [];
+
+        for (let token of initialTokens) {
+            if (token.startsWith('"') || token === '[' || token === ']' || token === '(' || token === ')') {
+                finalTokens.push(token);
+            } else {
+                const subTokens = token.split(/(>=|<=|!=|<>|[+\-*/^><=])/g).filter(t => t.length > 0);
+                finalTokens.push(...subTokens);
+            }
+        }
+        return finalTokens;
     }
 
     extractProcedures(tokens) {
@@ -314,6 +355,19 @@ class LogoInterpreter {
                 if (!token) return undefined;
                 const lowerToken = token.toLowerCase();
 
+                if (token.startsWith('"')) {
+                    const s = token.substring(1).replace(/_/g, ' ');
+                    const n = parseFloat(s);
+                    return isNaN(n) ? s : n;
+                }
+
+                if (token === '[') {
+                    i--; // Put back [ so getBlock can handle it
+                    const s = getBlock().join(' ');
+                    const n = parseFloat(s);
+                    return isNaN(n) ? s : n;
+                }
+
                 if (token === '(') {
                     let val = parseExpression();
                     if (tokens[i++] !== ')') throw new Error('Attendu )');
@@ -324,23 +378,62 @@ class LogoInterpreter {
                     return !parsePrimary();
                 }
 
-                if (['sin', 'cos', 'tan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'pow'].includes(lowerToken)) {
+                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max'].includes(lowerToken)) {
                     const func = lowerToken;
                     if (func === 'pow') {
                         const base = parsePrimary();
                         const exponent = parsePrimary();
                         return Math.pow(base, exponent);
                     }
+                    if (func === 'random' || func === 'hasard') {
+                        const limit = parsePrimary();
+                        return Math.floor(Math.random() * limit);
+                    }
+                    if (func === 'distance') {
+                        const x = parsePrimary();
+                        const y = parsePrimary();
+                        return Math.sqrt(Math.pow(x - this.turtle.x, 2) + Math.pow(y - this.turtle.y, 2));
+                    }
+                    if (func === 'towards' || func === 'vers') {
+                        const x = parsePrimary();
+                        const y = parsePrimary();
+                        const angle = Math.atan2(y - this.turtle.y, x - this.turtle.x);
+                        return (angle + Math.PI / 2) * 180 / Math.PI;
+                    }
+                    if (func === 'pos') {
+                        return `${Math.round(this.turtle.x)} ${Math.round(this.turtle.y)}`;
+                    }
+                    if (func === 'modulo' || func === 'reste') {
+                        const a = parsePrimary();
+                        const b = parsePrimary();
+                        return a % b;
+                    }
+                    if (func === 'min' || func === 'max') {
+                        const a = parsePrimary();
+                        const b = parsePrimary();
+                        return func === 'min' ? Math.min(a, b) : Math.max(a, b);
+                    }
+                    if (func === 'xcor') return this.turtle.x;
+                    if (func === 'ycor') return this.turtle.y;
+                    if (func === 'heading' || func === 'cap') return (this.turtle.angle + Math.PI / 2) * 180 / Math.PI;
+
                     const arg = parsePrimary();
                     switch (func) {
                         case 'sin': return Math.sin(arg * Math.PI / 180);
                         case 'cos': return Math.cos(arg * Math.PI / 180);
                         case 'tan': return Math.tan(arg * Math.PI / 180);
+                        case 'atan': return Math.atan(arg) * 180 / Math.PI;
                         case 'sqrt': return Math.sqrt(arg);
                         case 'abs': return Math.abs(arg);
                         case 'exp': return Math.exp(arg);
+                        case 'int': return Math.floor(arg);
+                        case 'round':
+                        case 'arrondi': return Math.round(arg);
+                        case 'ceil':
+                        case 'plafond': return Math.ceil(arg);
                         case 'ln':
                         case 'log': return Math.log(arg);
+                        case 'log10': return Math.log10(arg);
                         default: return 0;
                     }
                 }
@@ -351,6 +444,14 @@ class LogoInterpreter {
                     if (this.variables.has(varName)) return this.variables.get(varName);
                     throw new Error(this.t('unknown_variable') + ': ' + varName);
                 }
+
+                if (lowerToken === 'repcount') {
+                    if (localVars.has('repcount')) return localVars.get('repcount');
+                    if (this.variables.has('repcount')) return this.variables.get('repcount');
+                    return 0;
+                }
+
+                if (lowerToken === 'pi') return Math.PI;
 
                 const val = parseFloat(token);
                 if (isNaN(val)) return token; // String (can be case sensitive)
@@ -412,8 +513,18 @@ class LogoInterpreter {
                 continue;
             }
 
-            const commonCommands = ['fd', 'av', 'forward', 'bk', 're', 'back', 'rt', 'td', 'right', 'lt', 'tg', 'left', 'pu', 'lc', 'penup', 'pd', 'bc', 'pendown', 'cs', 've', 'clearscreen', 'home', 'ht', 'ct', 'hideturtle', 'st', 'mt', 'showturtle', 'pc', 'fc', 'setpencolor', 'ps', 'tc', 'setpensize', 'make', 'donne', 'repeat', 'repete', 'répète', 'if', 'si', 'ifelse', 'si_sinon', 'to', 'pour', 'end', 'fin', 'ecris', 'write', 'police', 'font'];
-            if (!commonCommands.includes(token) &&
+            const commonCommands = [
+                'fd', 'av', 'forward', 'avance', 'bk', 're', 'back', 'recule', 'rt', 'td', 'right', 'tournedroite', 'lt', 'tg', 'left', 'tournegauche',
+                'pu', 'lc', 'penup', 'levépinceau', 'pd', 'bc', 'pendown', 'baissépinceau', 'cs', 've', 'clearscreen', 'videécran', 'home', 'origine',
+                'ht', 'ct', 'hideturtle', 'cachetortue', 'st', 'mt', 'showturtle', 'montretortue', 'pc', 'fc', 'fcc', 'setpencolor', 'fixecouleurcrayon',
+                'ps', 'tc', 'fep', 'setpensize', 'fixeépaisseurpinceau', 'make', 'donne', 'repeat', 'repete', 'répète',
+                'if', 'si', 'ifelse', 'si_sinon', 'to', 'pour', 'end', 'fin',
+                'ecris', 'write', 'label', 'print', 'affiche', 'police', 'font',
+                'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf'
+            ];
+            const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos'];
+
+            if (!commonCommands.includes(token) && !functions.includes(token) &&
                 !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
                 const varName = token;
                 i++;
@@ -437,59 +548,114 @@ class LogoInterpreter {
                 case 'fd':
                 case 'av':
                 case 'forward':
+                case 'avance':
                     this.turtle.forward(evaluateExpression());
                     break;
                 case 'bk':
                 case 're':
                 case 'back':
+                case 'recule':
                     this.turtle.back(evaluateExpression());
                     break;
                 case 'rt':
                 case 'td':
                 case 'right':
+                case 'tournedroite':
                     this.turtle.right(evaluateExpression());
                     break;
                 case 'lt':
                 case 'tg':
                 case 'left':
+                case 'tournegauche':
                     this.turtle.left(evaluateExpression());
                     break;
                 case 'pu':
                 case 'lc':
                 case 'penup':
+                case 'levépinceau':
                     this.turtle.penup();
                     break;
                 case 'pd':
                 case 'bc':
                 case 'pendown':
+                case 'baissépinceau':
                     this.turtle.pendown();
                     break;
                 case 'cs':
                 case 've':
                 case 'clearscreen':
+                case 'videécran':
                     this.turtle.reset();
                     break;
                 case 'home':
+                case 'origine':
                     this.turtle.home();
+                    break;
+                case 'clean':
+                case 'nettoie':
+                    this.turtle.clear();
+                    break;
+                case 'setxy':
+                case 'faisxy':
+                case 'fixexy':
+                case 'setpos':
+                case 'fixepos':
+                    const val1 = evaluateExpression();
+                    if (typeof val1 === 'string') {
+                        const parts = val1.trim().split(/\s+/).map(parseFloat);
+                        if (parts.length >= 2) {
+                            this.turtle.setxy(parts[0], parts[1]);
+                        }
+                    } else {
+                        this.turtle.setxy(val1, evaluateExpression());
+                    }
+                    break;
+                case 'setbg':
+                case 'fccf':
+                    this.turtle.canvas.style.backgroundColor = evaluateExpression();
+                    break;
+                case 'setx':
+                case 'faisx':
+                case 'fixex':
+                    this.turtle.setxy(evaluateExpression(), this.turtle.y);
+                    break;
+                case 'sety':
+                case 'faisy':
+                case 'fixey':
+                    this.turtle.setxy(this.turtle.x, evaluateExpression());
+                    break;
+                case 'setheading':
+                case 'faiscap':
+                case 'fixecap':
+                    this.turtle.setheading(evaluateExpression());
+                    break;
+                case 'arc':
+                    this.turtle.arc(evaluateExpression(), evaluateExpression());
                     break;
                 case 'ht':
                 case 'ct':
                 case 'hideturtle':
+                case 'cachetortue':
                     this.turtle.hideturtle();
                     break;
                 case 'st':
                 case 'mt':
                 case 'showturtle':
+                case 'montretortue':
                     this.turtle.showturtle();
                     break;
                 case 'pc':
                 case 'fc':
+                case 'fcc':
                 case 'setpencolor':
+                case 'fixecouleurcrayon':
                     this.turtle.setpencolor(evaluateExpression());
                     break;
                 case 'ps':
                 case 'tc':
+                case 'fep':
                 case 'setpensize':
+                case 'fixeépaisseurpinceau':
                     this.turtle.setpensize(evaluateExpression());
                     break;
                 case 'make':
@@ -530,7 +696,10 @@ class LogoInterpreter {
                     break;
                 case 'ecris':
                 case 'write':
-                    this.turtle.write(getQuotedString());
+                case 'label':
+                case 'print':
+                case 'affiche':
+                    this.turtle.write(evaluateExpression());
                     break;
                 case 'police':
                 case 'font':

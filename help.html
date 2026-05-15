@@ -118,10 +118,34 @@
                 <td><code>ve</code></td>
             </tr>
             <tr>
+                <td><code>nettoie</code></td>
+                <td><code>clean</code></td>
+                <td>Efface le dessin sans bouger la tortue</td>
+                <td><code>nettoie</code></td>
+            </tr>
+            <tr>
                 <td><code>home</code></td>
                 <td><code>home</code></td>
                 <td>Ramène la tortue au centre</td>
                 <td><code>home</code></td>
+            </tr>
+            <tr>
+                <td><code>faisxy [x] [y]</code></td>
+                <td><code>setxy [x] [y]</code></td>
+                <td>Place la tortue aux coordonnées x, y</td>
+                <td><code>faisxy 100 100</code></td>
+            </tr>
+            <tr>
+                <td><code>faiscap [angle]</code></td>
+                <td><code>setheading [a]</code></td>
+                <td>Oriente la tortue (0 = haut)</td>
+                <td><code>faiscap 90</code></td>
+            </tr>
+            <tr>
+                <td><code>arc [angle] [r]</code></td>
+                <td><code>arc [angle] [r]</code></td>
+                <td>Trace un arc de cercle de rayon r</td>
+                <td><code>arc 360 50</code></td>
             </tr>
         </table>
     </section>
@@ -217,7 +241,74 @@ fin</pre>
     <section>
         <h2>6. Expressions et Fonctions Mathématiques</h2>
         <p>Support des parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
-        <p>Fonctions (angles en degrés) : <code>sin</code>, <code>cos</code>, <code>tan</code>, <code>sqrt</code>, <code>abs</code>, <code>exp</code>, <code>ln</code>, <code>pow</code>.</p>
+        <h3>Fonctions disponibles :</h3>
+        <table>
+            <tr>
+                <th>Fonction</th>
+                <th>Description</th>
+                <th>Exemple</th>
+            </tr>
+            <tr>
+                <td><code>sin, cos, tan, atan</code></td>
+                <td>Trigonométrie (angles en degrés)</td>
+                <td><code>av 100 * sin 45</code></td>
+            </tr>
+            <tr>
+                <td><code>pi</code></td>
+                <td>Constante Mathématique π (3.14159...)</td>
+                <td><code>av pi * 10</code></td>
+            </tr>
+            <tr>
+                <td><code>sqrt, pow, ^</code></td>
+                <td>Racine carrée, puissance</td>
+                <td><code>av sqrt 100</code></td>
+            </tr>
+            <tr>
+                <td><code>abs, exp, ln</code></td>
+                <td>Valeur absolue, exponentielle, logarithme</td>
+                <td><code>av abs -50</code></td>
+            </tr>
+            <tr>
+                <td><code>hasard [n] / random</code></td>
+                <td>Nombre aléatoire entre 0 et n</td>
+                <td><code>td hasard 360</code></td>
+            </tr>
+            <tr>
+                <td><code>int [n], arrondi [n], plafond [n]</code></td>
+                <td>Partie entière, Arrondi, Plafond</td>
+                <td><code>av int 50.7</code></td>
+            </tr>
+            <tr>
+                <td><code>modulo [a] [b] / reste</code></td>
+                <td>Reste de la division de a par b</td>
+                <td><code>ecris modulo 10 3</code></td>
+            </tr>
+            <tr>
+                <td><code>min [a] [b], max [a] [b]</code></td>
+                <td>Minimum ou Maximum entre deux valeurs</td>
+                <td><code>ecris max 10 20</code></td>
+            </tr>
+            <tr>
+                <td><code>xcor, ycor</code></td>
+                <td>Position actuelle X ou Y</td>
+                <td><code>donne "x xcor</code></td>
+            </tr>
+            <tr>
+                <td><code>cap / heading</code></td>
+                <td>Angle actuel de la tortue</td>
+                <td><code>si [ cap = 0 ] [ ... ]</code></td>
+            </tr>
+            <tr>
+                <td><code>distance [x] [y]</code></td>
+                <td>Distance entre la tortue et le point (x,y)</td>
+                <td><code>d = distance 0 0</code></td>
+            </tr>
+            <tr>
+                <td><code>vers [x] [y] / towards</code></td>
+                <td>Angle vers le point (x,y)</td>
+                <td><code>faiscap vers 0 0</code></td>
+            </tr>
+        </table>
     </section>
 
     <footer>
