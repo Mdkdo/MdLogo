@@ -18,7 +18,8 @@
       "text": "Texte et Logique",
       "drawing": "Formes Géométriques",
       "events": "Événements Souris/Clavier",
-      "array": "Tableaux et Listes"
+      "array": "Tableaux et Listes",
+      "multimedia": "Multimédia (Vidéo/Image)"
     },
     "errors": {
       "unknown_command": "Commande inconnue",
@@ -46,7 +47,8 @@
       "text": "Text and Logic",
       "drawing": "Geometric Shapes",
       "events": "Mouse/Keyboard Events",
-      "array": "Arrays and Lists"
+      "array": "Arrays and Lists",
+      "multimedia": "Multimedia (Video/Image)"
     },
     "errors": {
       "unknown_command": "Unknown command",

@@ -460,7 +460,7 @@ class LogoInterpreter {
                     return !parsePrimary();
                 }
 
-                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'taille', 'count'].includes(lowerToken)) {
+                if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'list_taille', 'list_size'].includes(lowerToken)) {
                     const func = lowerToken;
                     if (func === 'élément' || func === 'item') {
                         const idx = parsePrimary();
@@ -471,7 +471,7 @@ class LogoInterpreter {
                         }
                         return list;
                     }
-                    if (func === 'taille' || func === 'count') {
+                    if (func === 'list_taille' || func === 'list_size') {
                         const list = parsePrimary();
                         if (typeof list === 'string') {
                             return list.trim().split(/\s+/).length;
@@ -557,6 +557,22 @@ class LogoInterpreter {
                 if (isNaN(val)) {
                     // Check if it's a variable even without :
                     const varName = token.toLowerCase();
+                    let list = localVars.get(varName) || this.variables.get(varName);
+
+                    // Support ma_liste [ index ] access
+                    if (list !== undefined && i < tokens.length && tokens[i] === '[') {
+                        const idxBlock = getBlock();
+                        const oldT = tokens; const oldI = i;
+                        tokens = idxBlock; i = 0;
+                        const idxVal = evaluateExpression();
+                        tokens = oldT; i = oldI;
+
+                        if (typeof list === 'string') {
+                            const arr = list.trim().split(/\s+/);
+                            return arr[idxVal - 1];
+                        }
+                    }
+
                     if (localVars.has(varName)) return localVars.get(varName);
                     if (this.variables.has(varName)) return this.variables.get(varName);
                     return token; // String literal or unknown
@@ -614,15 +630,6 @@ class LogoInterpreter {
                 continue;
             }
 
-            if (rawToken.startsWith(':') && i < tokens.length && tokens[i] === '=') {
-                const varName = rawToken.substring(1).toLowerCase();
-                i++;
-                const val = evaluateExpression();
-                if (localVars.has(varName)) localVars.set(varName, val);
-                else this.variables.set(varName, val);
-                continue;
-            }
-
             const commonCommands = [
                 'fd', 'av', 'forward', 'avance', 'bk', 're', 'back', 'recule', 'rt', 'td', 'right', 'tournedroite', 'lt', 'tg', 'left', 'tournegauche',
                 'pu', 'lc', 'penup', 'levépinceau', 'pd', 'bc', 'pendown', 'baissépinceau', 'cs', 've', 'clearscreen', 'videécran', 'home', 'origine',
@@ -632,9 +639,48 @@ class LogoInterpreter {
                 'ecris', 'write', 'label', 'print', 'affiche', 'police', 'font',
                 'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf',
                 'rectangle', 'cercle', 'circle', 'ligne', 'line', 'ellipse', 'joueson', 'playsound', 'montreimage', 'showimage', 'montrevideo', 'showvideo',
-                'élément', 'item', 'fixeélément', 'setitem', 'ajoute', 'append', 'retire', 'remove', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
+                'élément', 'item', 'list_modifie', 'list_modify', 'list_ajout', 'list_append', 'list_retire', 'list_remove', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
             ];
-            const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item'];
+            const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item', 'list_taille', 'list_size'];
+
+            // ma_liste [ index ] = valeur
+            if (rawToken.startsWith(':') || (!commonCommands.includes(token) && !functions.includes(token) && !this.procedures.has(token))) {
+                const name = rawToken.startsWith(':') ? rawToken.substring(1).toLowerCase() : token;
+                if (i < tokens.length && tokens[i] === '[') {
+                    const saveI = i;
+                    const idxBlock = getBlock();
+                    if (i < tokens.length && tokens[i] === '=') {
+                        i++; // skip =
+                        const newVal = evaluateExpression();
+                        const oldT = tokens; const oldI = i;
+                        tokens = idxBlock; i = 0;
+                        const idxVal = evaluateExpression();
+                        tokens = oldT; i = oldI;
+
+                        let list = localVars.get(name) || this.variables.get(name);
+                        if (typeof list === 'string') {
+                            let arr = list.trim().split(/\s+/);
+                            arr[idxVal - 1] = newVal;
+                            const res = arr.join(' ');
+                            if (localVars.has(name)) localVars.set(name, res);
+                            else this.variables.set(name, res);
+                            continue;
+                        }
+                    } else {
+                        i = saveI; // backtrack
+                    }
+                }
+            }
+
+            if (rawToken.startsWith(':') && i < tokens.length && tokens[i] === '=') {
+                const varName = rawToken.substring(1).toLowerCase();
+                i++;
+                const val = evaluateExpression();
+                if (localVars.has(varName)) localVars.set(varName, val);
+                else this.variables.set(varName, val);
+                continue;
+            }
+
 
             if (!commonCommands.includes(token) && !functions.includes(token) &&
                 !this.procedures.has(token) && i < tokens.length && tokens[i] === '=') {
@@ -764,35 +810,62 @@ class LogoInterpreter {
                     new Audio(soundUrl).play().catch(e => console.error("Audio error:", e));
                     break;
                 case 'montreimage':
-                case 'showimage':
+                case 'showimage': {
                     const imgUrl = evaluateExpression();
+                    let ix = this.turtle.x, iy = this.turtle.y, iw, ih;
+                    if (tokens[i] === '[') {
+                        const params = getBlock();
+                        const oldT = tokens; const oldI = i;
+                        tokens = params; i = 0;
+                        ix = evaluateExpression();
+                        iy = evaluateExpression();
+                        if (i < tokens.length) iw = evaluateExpression();
+                        if (i < tokens.length) ih = evaluateExpression();
+                        tokens = oldT; i = oldI;
+                    }
                     const img = new Image();
-                    img.onload = () => this.turtle.ctx.drawImage(img, this.turtle.x, this.turtle.y);
+                    img.onload = () => {
+                        if (iw && ih) this.turtle.ctx.drawImage(img, ix, iy, iw, ih);
+                        else this.turtle.ctx.drawImage(img, ix, iy);
+                    };
                     img.src = imgUrl;
                     break;
+                }
                 case 'montrevideo':
-                case 'showvideo':
+                case 'showvideo': {
                     const videoUrl = evaluateExpression();
+                    let vx = this.turtle.x, vy = this.turtle.y, vw = 200, vh = 150;
+                    if (tokens[i] === '[') {
+                        const params = getBlock();
+                        const oldT = tokens; const oldI = i;
+                        tokens = params; i = 0;
+                        vx = evaluateExpression();
+                        vy = evaluateExpression();
+                        if (i < tokens.length) vw = evaluateExpression();
+                        if (i < tokens.length) vh = evaluateExpression();
+                        tokens = oldT; i = oldI;
+                    }
                     const video = document.createElement('video');
                     video.src = videoUrl;
-                    video.autoplay = true;
+                    video.autoplay = true; video.loop = true; video.muted = true;
                     video.onplay = () => {
                         const draw = () => {
                             if (!video.paused && !video.ended) {
-                                this.turtle.ctx.drawImage(video, this.turtle.x, this.turtle.y, 200, 150);
+                                this.turtle.ctx.drawImage(video, vx, vy, vw, vh);
                                 requestAnimationFrame(draw);
                             }
                         };
                         draw();
                     };
                     break;
+                }
                 case 'élément':
                 case 'item':
                     // This is handled in expressions mostly, but as a command it might not make sense unless printing
                     console.log(evaluateExpression());
                     break;
-                case 'fixeélément':
-                case 'setitem':
+                case 'list_modifie':
+                case 'list_modify':
                     const index = evaluateExpression();
                     let listName = tokens[i++];
                     if (listName.startsWith('"')) listName = listName.substring(1).toLowerCase();
@@ -806,8 +879,8 @@ class LogoInterpreter {
                         else this.variables.set(listName, res);
                     }
                     break;
-                case 'ajoute':
-                case 'append':
+                case 'list_ajout':
+                case 'list_append':
                     while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
                     let appendListName = tokens[i++];
                     if (appendListName.startsWith('"')) appendListName = appendListName.substring(1).toLowerCase();
@@ -822,8 +895,8 @@ class LogoInterpreter {
                         else this.variables.set(appendListName, res);
                     }
                     break;
-                case 'retire':
-                case 'remove':
+                case 'list_retire':
+                case 'list_remove':
                     const removeIdx = evaluateExpression();
                     while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
                     let removeListName = tokens[i++];
@@ -984,7 +1057,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         'text': 'police "bold_20px_Arial\necris "Bonjour\nav 50\nfc red\npolice "italic_16px_Courier\necris [Le Logo est puissant !]\nre 50 td 90 av 100\nsi [ (1 = 1) et (non (1 > 2)) ] [\n  ecris "Logique_OK\n]',
         'drawing': 'fc blue tc 3\nrectangle 50 50 150 100\nfc red\ncercle 50\nfc green\nligne 0 0 300 300\nellipse 200 200 400 300',
         'events': 'ecris [Cliquez sur le canevas ou appuyez sur une touche]\n\nquand_clic [\n  fc hasard 1000000\n  setpos [mousex mousey]\n  cercle 20\n]\n\nquand_touche "a [\n  ecris "Touche_A_appuyée\n]',
-        'array': 'ma_liste = [10 20 30 40]\necris ma_liste\necris [Le 2ème élément est :]\necris élément 2 ma_liste\n\nfixeélément 2 ma_liste 99\necris [Liste modifiée :]\necris ma_liste\n\najoute "ma_liste 500\necris [Après ajout :]\necris ma_liste'
+        'array': 'ma_liste = [10 20 30 40]\necris ma_liste\necris [Le 2ème élément est :]\necris ma_liste [ 2 ]\n\nma_liste [ 2 ] = 99\necris [Liste modifiée :]\necris ma_liste\n\nlist_ajout "ma_liste 500\necris [Après ajout :]\necris ma_liste\necris [Taille :]\necris list_taille :ma_liste',
+        'multimedia': 'montreimage "https://picsum.photos/200/300 [50 50 100 100]\nmontrevideo "https://www.w3schools.com/html/mov_bbb.mp4 [200 50 150 100]'
     };
 
     let translations = interpreter.translations;

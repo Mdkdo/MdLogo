@@ -83,7 +83,7 @@
         <table>
             <tr>
                 <th>Français</th>
-                <th>Anglais</th>
+                <th>Anglais / English</th>
                 <th>Description</th>
                 <th>Exemple</th>
             </tr>
@@ -175,37 +175,41 @@
     </section>
 
     <section>
-        <h2>3. Multimédia</h2>
+        <h2>2. Multimédia</h2>
         <table>
             <tr>
                 <th>Français</th>
-                <th>Anglais</th>
-                <th>Description</th>
+                <th>Anglais / English</th>
+                <th>Description détaillée</th>
+                <th>Exemple</th>
             </tr>
             <tr>
                 <td><code>joueson [url]</code></td>
                 <td><code>playsound [url]</code></td>
-                <td>Joue un fichier audio</td>
+                <td>Charge et joue un fichier audio depuis une URL.</td>
+                <td><code>joueson "son.mp3</code></td>
             </tr>
             <tr>
-                <td><code>montreimage [url]</code></td>
-                <td><code>showimage [url]</code></td>
-                <td>Affiche une image à la position de la tortue</td>
+                <td><code>montreimage [url] [cadre]</code></td>
+                <td><code>showimage [url] [frame]</code></td>
+                <td>Affiche une image. Le cadre optionnel est une liste <code>[x y largeur hauteur]</code>. Si omis, utilise la position de la tortue.</td>
+                <td><code>montreimage "img.jpg [50 50 100 100]</code></td>
             </tr>
             <tr>
-                <td><code>montrevideo [url]</code></td>
-                <td><code>showvideo [url]</code></td>
-                <td>Affiche une vidéo à la position de la tortue</td>
+                <td><code>montrevideo [url] [cadre]</code></td>
+                <td><code>showvideo [url] [frame]</code></td>
+                <td>Affiche une vidéo en boucle. Le cadre optionnel est <code>[x y largeur hauteur]</code>.</td>
+                <td><code>montrevideo "vid.mp4 [0 0 200 150]</code></td>
             </tr>
         </table>
     </section>
 
     <section>
-        <h2>4. Gestion du crayon et de la tortue</h2>
+        <h2>3. Gestion du crayon et de la tortue</h2>
         <table>
             <tr>
                 <th>Français</th>
-                <th>Anglais</th>
+                <th>Anglais / English</th>
                 <th>Description</th>
             </tr>
             <tr>
@@ -252,53 +256,60 @@
     </section>
 
     <section>
-        <h2>5. Listes et Tableaux (Déclaration, Initialisation, Manipulation)</h2>
-        <p>En Logo, un tableau est représenté par une liste entre crochets <code>[ ]</code>.</p>
+        <h2>4. Listes et Tableaux (Déclaration, Initialisation, Manipulation)</h2>
+        <p>En Logo, un tableau est représenté par une liste entre crochets <code>[ ]</code>. Les index commencent à 1.</p>
         <table>
             <tr>
                 <th>Action</th>
-                <th>Commande</th>
-                <th>Exemple</th>
+                <th>Français</th>
+                <th>Anglais / English</th>
+                <th>Exemple Moderne</th>
             </tr>
             <tr>
-                <td><b>Déclarer / Initialiser</b></td>
-                <td><code>nom = [valeurs]</code> ou <code>donne "nom [valeurs]</code></td>
-                <td><code>ma_liste = [10 20 30]</code></td>
+                <td><b>Initialiser</b></td>
+                <td><code>nom = [v1 v2]</code></td>
+                <td><code>name = [v1 v2]</code></td>
+                <td><code>ma_liste = [10 20]</code></td>
             </tr>
             <tr>
                 <td><b>Accéder</b></td>
-                <td><code>élément [index] [liste]</code></td>
-                <td><code>ecris élément 1 :ma_liste</code></td>
+                <td><code>élément [i] [L]</code></td>
+                <td><code>item [i] [L]</code></td>
+                <td><code>x = ma_liste [ 1 ]</code></td>
             </tr>
             <tr>
                 <td><b>Modifier</b></td>
-                <td><code>fixeélément [index] [nom] [valeur]</code></td>
-                <td><code>fixeélément 2 "ma_liste 50</code></td>
+                <td><code>list_modifie [i] [N] [V]</code></td>
+                <td><code>list_modify [i] [N] [V]</code></td>
+                <td><code>ma_liste [ 1 ] = 50</code></td>
             </tr>
             <tr>
                 <td><b>Ajouter</b></td>
-                <td><code>ajoute [nom] [valeur]</code></td>
-                <td><code>ajoute "ma_liste 40</code></td>
+                <td><code>list_ajout [N] [V]</code></td>
+                <td><code>list_append [N] [V]</code></td>
+                <td><code>list_ajout "ma_liste 100</code></td>
             </tr>
             <tr>
                 <td><b>Supprimer</b></td>
-                <td><code>retire [index] [nom]</code></td>
-                <td><code>retire 1 "ma_liste</code></td>
+                <td><code>list_retire [i] [N]</code></td>
+                <td><code>list_remove [i] [N]</code></td>
+                <td><code>list_retire 1 "ma_liste</code></td>
             </tr>
             <tr>
                 <td><b>Taille</b></td>
-                <td><code>taille [liste]</code></td>
-                <td><code>ecris taille :ma_liste</code></td>
+                <td><code>list_taille [L]</code></td>
+                <td><code>list_size [L]</code></td>
+                <td><code>n = list_taille :ma_liste</code></td>
             </tr>
         </table>
     </section>
 
     <section>
-        <h2>6. Événements</h2>
+        <h2>5. Événements</h2>
         <table>
             <tr>
                 <th>Français</th>
-                <th>Anglais</th>
+                <th>Anglais / English</th>
                 <th>Description</th>
             </tr>
             <tr>
@@ -315,7 +326,7 @@
     </section>
 
     <section>
-        <h2>7. Structures de contrôle</h2>
+        <h2>6. Structures de contrôle</h2>
         <h3>Boucles : répète / repete (repeat)</h3>
         <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle.</p>
         <pre>répète 4 [ av 100 td 90 ]</pre>
@@ -336,7 +347,7 @@
     </section>
 
     <section>
-        <h2>8. Variables et Affectations</h2>
+        <h2>7. Variables et Affectations</h2>
         <p>Syntaxe standard Logo : <code>donne "nom valeur</code> (anglais: <code>make</code>)</p>
         <p>Syntaxe moderne : <code>nom = valeur</code></p>
         <pre>taille = 100
@@ -344,7 +355,7 @@ av :taille</pre>
     </section>
 
     <section>
-        <h2>9. Procédures</h2>
+        <h2>8. Procédures</h2>
         <p>Créez des fonctions réutilisables avec <code>pour [nom] [paramètres] ... fin</code>.</p>
         <pre>pour carré :taille
   répète 4 [ av :taille td 90 ]
@@ -352,72 +363,85 @@ fin</pre>
     </section>
 
     <section>
-        <h2>10. Expressions et Fonctions Mathématiques</h2>
+        <h2>9. Expressions et Fonctions Mathématiques</h2>
         <p>Support des parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
         <h3>Fonctions disponibles :</h3>
         <table>
             <tr>
-                <th>Fonction</th>
+                <th>Français</th>
+                <th>Anglais / English</th>
                 <th>Description</th>
                 <th>Exemple</th>
             </tr>
             <tr>
+                <td><code>sin, cos, tan, atan</code></td>
                 <td><code>sin, cos, tan, atan</code></td>
                 <td>Trigonométrie (angles en degrés)</td>
                 <td><code>av 100 * sin 45</code></td>
             </tr>
             <tr>
                 <td><code>pi</code></td>
+                <td><code>pi</code></td>
                 <td>Constante Mathématique π (3.14159...)</td>
                 <td><code>av pi * 10</code></td>
             </tr>
             <tr>
+                <td><code>sqrt, pow, ^</code></td>
                 <td><code>sqrt, pow, ^</code></td>
                 <td>Racine carrée, puissance</td>
                 <td><code>av sqrt 100</code></td>
             </tr>
             <tr>
                 <td><code>abs, exp, ln</code></td>
+                <td><code>abs, exp, ln</code></td>
                 <td>Valeur absolue, exponentielle, logarithme</td>
                 <td><code>av abs -50</code></td>
             </tr>
             <tr>
-                <td><code>hasard [n] / random</code></td>
+                <td><code>hasard [n]</code></td>
+                <td><code>random [n]</code></td>
                 <td>Nombre aléatoire entre 0 et n</td>
                 <td><code>td hasard 360</code></td>
             </tr>
             <tr>
                 <td><code>int [n], arrondi [n], plafond [n]</code></td>
+                <td><code>int [n], round [n], ceil [n]</code></td>
                 <td>Partie entière, Arrondi, Plafond</td>
                 <td><code>av int 50.7</code></td>
             </tr>
             <tr>
-                <td><code>modulo [a] [b] / reste</code></td>
+                <td><code>modulo [a] [b]</code></td>
+                <td><code>modulo [a] [b]</code></td>
                 <td>Reste de la division de a par b</td>
                 <td><code>ecris modulo 10 3</code></td>
             </tr>
             <tr>
+                <td><code>min [a] [b], max [a] [b]</code></td>
                 <td><code>min [a] [b], max [a] [b]</code></td>
                 <td>Minimum ou Maximum entre deux valeurs</td>
                 <td><code>ecris max 10 20</code></td>
             </tr>
             <tr>
                 <td><code>xcor, ycor</code></td>
+                <td><code>xcor, ycor</code></td>
                 <td>Position actuelle X ou Y</td>
                 <td><code>donne "x xcor</code></td>
             </tr>
             <tr>
-                <td><code>cap / heading</code></td>
+                <td><code>cap</code></td>
+                <td><code>heading</code></td>
                 <td>Angle actuel de la tortue</td>
                 <td><code>si [ cap = 0 ] [ ... ]</code></td>
             </tr>
             <tr>
                 <td><code>distance [x] [y]</code></td>
+                <td><code>distance [x] [y]</code></td>
                 <td>Distance entre la tortue et le point (x,y)</td>
                 <td><code>d = distance 0 0</code></td>
             </tr>
             <tr>
-                <td><code>vers [x] [y] / towards</code></td>
+                <td><code>vers [x] [y]</code></td>
+                <td><code>towards [x] [y]</code></td>
                 <td>Angle vers le point (x,y)</td>
                 <td><code>faiscap vers 0 0</code></td>
             </tr>
