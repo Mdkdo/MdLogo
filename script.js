@@ -235,6 +235,12 @@ class Turtle {
     }
 }
 
+class ReturnSignal {
+    constructor(value) {
+        this.value = value;
+    }
+}
+
 class LogoInterpreter {
     constructor(turtle) {
         this.turtle = turtle;
@@ -508,6 +514,21 @@ class LogoInterpreter {
                     return !parsePrimary();
                 }
 
+                if (this.procedures.has(lowerToken)) {
+                    const proc = this.procedures.get(lowerToken);
+                    const procArgs = new Map();
+                    for (const param of proc.params) {
+                        procArgs.set(param, evaluateExpression());
+                    }
+                    try {
+                        this.run(proc.body, procArgs);
+                    } catch (e) {
+                        if (e instanceof ReturnSignal) return e.value;
+                        throw e;
+                    }
+                    return undefined;
+                }
+
                 if (['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'élément', 'item', 'list_taille', 'list_size', 'rvb', 'rgb'].includes(lowerToken)) {
                     const func = lowerToken;
                     if (func === 'rvb' || func === 'rgb') {
@@ -697,7 +718,7 @@ class LogoInterpreter {
                 'ecris', 'write', 'label', 'print', 'affiche', 'police', 'font',
                 'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf',
                 'rectangle', 'cercle', 'circle', 'ligne', 'line', 'ellipse', 'joueson', 'playsound', 'montreimage', 'showimage', 'montrevideo', 'showvideo',
-                'élément', 'item', 'list_modifie', 'list_modify', 'list_ajout', 'list_append', 'list_retire', 'list_remove', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
+                'élément', 'item', 'list_modifie', 'list_modify', 'list_ajout', 'list_append', 'list_retire', 'list_remove', 'quand_clic', 'onclick', 'quand_touche', 'onkey', 'rend', 'output'
             ];
             const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item', 'list_taille', 'list_size'];
 
@@ -756,7 +777,11 @@ class LogoInterpreter {
                 for (const param of proc.params) {
                     procArgs.set(param, evaluateExpression());
                 }
-                this.run(proc.body, procArgs);
+                try {
+                    this.run(proc.body, procArgs);
+                } catch (e) {
+                    if (!(e instanceof ReturnSignal)) throw e;
+                }
                 continue;
             }
 
@@ -1076,6 +1101,9 @@ class LogoInterpreter {
                     this.turtle.write(msg);
                     if (window.logToConsole) window.logToConsole(String(msg));
                     break;
+                case 'rend':
+                case 'output':
+                    throw new ReturnSignal(evaluateExpression());
                 case 'police':
                 case 'font':
                     this.turtle.setFont(getQuotedString());

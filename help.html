@@ -401,6 +401,12 @@ av :taille</pre>
         <pre>pour carré :taille
   répète 4 [ av :taille td 90 ]
 fin</pre>
+        <p>Pour retourner une valeur depuis une procédure (afin de l'utiliser dans un calcul par exemple), utilisez <code>rend</code> (ou <code>output</code>).</p>
+        <pre>pour carré_val :n
+  rend :n * :n
+fin
+
+ecris carré_val 5  ; Affiche 25</pre>
     </section>
 
     <section>
