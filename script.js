@@ -632,7 +632,7 @@ class LogoInterpreter {
                 'ecris', 'write', 'label', 'print', 'affiche', 'police', 'font',
                 'setxy', 'faisxy', 'fixexy', 'setpos', 'fixepos', 'setx', 'faisx', 'fixex', 'sety', 'faisy', 'fixey', 'setheading', 'faiscap', 'fixecap', 'arc', 'clean', 'nettoie', 'setbg', 'fccf',
                 'rectangle', 'cercle', 'circle', 'ligne', 'line', 'ellipse', 'joueson', 'playsound', 'montreimage', 'showimage', 'montrevideo', 'showvideo',
-                'élément', 'item', 'fixeélément', 'setitem', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
+                'élément', 'item', 'fixeélément', 'setitem', 'ajoute', 'append', 'retire', 'remove', 'quand_clic', 'onclick', 'quand_touche', 'onkey'
             ];
             const functions = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item'];
 
@@ -801,8 +801,41 @@ class LogoInterpreter {
                     if (typeof list === 'string') {
                         let arr = list.trim().split(/\s+/);
                         arr[index - 1] = newVal;
-                        if (localVars.has(listName)) localVars.set(listName, arr.join(' '));
-                        else this.variables.set(listName, arr.join(' '));
+                        const res = arr.join(' ');
+                        if (localVars.has(listName)) localVars.set(listName, res);
+                        else this.variables.set(listName, res);
+                    }
+                    break;
+                case 'ajoute':
+                case 'append':
+                    while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
+                    let appendListName = tokens[i++];
+                    if (appendListName.startsWith('"')) appendListName = appendListName.substring(1).toLowerCase();
+                    else appendListName = appendListName.toLowerCase();
+                    const appendVal = evaluateExpression();
+                    let appendList = localVars.get(appendListName) || this.variables.get(appendListName);
+                    if (typeof appendList === 'string') {
+                        let arr = appendList.trim().split(/\s+/);
+                        arr.push(appendVal);
+                        const res = arr.join(' ');
+                        if (localVars.has(appendListName)) localVars.set(appendListName, res);
+                        else this.variables.set(appendListName, res);
+                    }
+                    break;
+                case 'retire':
+                case 'remove':
+                    const removeIdx = evaluateExpression();
+                    while (i < tokens.length && (tokens[i] === '(' || tokens[i] === ',')) i++;
+                    let removeListName = tokens[i++];
+                    if (removeListName.startsWith('"')) removeListName = removeListName.substring(1).toLowerCase();
+                    else removeListName = removeListName.toLowerCase();
+                    let removeList = localVars.get(removeListName) || this.variables.get(removeListName);
+                    if (typeof removeList === 'string') {
+                        let arr = removeList.trim().split(/\s+/);
+                        arr.splice(removeIdx - 1, 1);
+                        const res = arr.join(' ');
+                        if (localVars.has(removeListName)) localVars.set(removeListName, res);
+                        else this.variables.set(removeListName, res);
                     }
                     break;
                 case 'quand_clic':
@@ -934,7 +967,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const codeEditor = document.getElementById('code-editor');
     const runBtn = document.getElementById('run-btn');
     const clearBtn = document.getElementById('clear-btn');
-    const errorConsole = document.getElementById('error-console');
     const examplesSelect = document.getElementById('examples-select');
     const langSelect = document.getElementById('lang-select');
     const titleEl = document.querySelector('header h1');
@@ -952,7 +984,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         'text': 'police "bold_20px_Arial\necris "Bonjour\nav 50\nfc red\npolice "italic_16px_Courier\necris [Le Logo est puissant !]\nre 50 td 90 av 100\nsi [ (1 = 1) et (non (1 > 2)) ] [\n  ecris "Logique_OK\n]',
         'drawing': 'fc blue tc 3\nrectangle 50 50 150 100\nfc red\ncercle 50\nfc green\nligne 0 0 300 300\nellipse 200 200 400 300',
         'events': 'ecris [Cliquez sur le canevas ou appuyez sur une touche]\n\nquand_clic [\n  fc hasard 1000000\n  setpos [mousex mousey]\n  cercle 20\n]\n\nquand_touche "a [\n  ecris "Touche_A_appuyée\n]',
-        'array': 'ma_liste = [10 20 30 40]\necris ma_liste\necris [Le 2ème élément est :]\necris élément 2 ma_liste\n\nfixeélément 2 ma_liste 99\necris [Liste modifiée :]\necris ma_liste'
+        'array': 'ma_liste = [10 20 30 40]\necris ma_liste\necris [Le 2ème élément est :]\necris élément 2 ma_liste\n\nfixeélément 2 ma_liste 99\necris [Liste modifiée :]\necris ma_liste\n\najoute "ma_liste 500\necris [Après ajout :]\necris ma_liste'
     };
 
     let translations = interpreter.translations;

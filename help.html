@@ -175,7 +175,7 @@
     </section>
 
     <section>
-        <h2>2. Multimédia</h2>
+        <h2>3. Multimédia</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -201,7 +201,7 @@
     </section>
 
     <section>
-        <h2>2. Gestion du crayon et de la tortue</h2>
+        <h2>4. Gestion du crayon et de la tortue</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -252,28 +252,49 @@
     </section>
 
     <section>
-        <h2>3. Listes et Tableaux</h2>
+        <h2>5. Listes et Tableaux (Déclaration, Initialisation, Manipulation)</h2>
+        <p>En Logo, un tableau est représenté par une liste entre crochets <code>[ ]</code>.</p>
         <table>
             <tr>
-                <th>Français</th>
-                <th>Anglais</th>
-                <th>Description</th>
+                <th>Action</th>
+                <th>Commande</th>
+                <th>Exemple</th>
             </tr>
             <tr>
+                <td><b>Déclarer / Initialiser</b></td>
+                <td><code>nom = [valeurs]</code> ou <code>donne "nom [valeurs]</code></td>
+                <td><code>ma_liste = [10 20 30]</code></td>
+            </tr>
+            <tr>
+                <td><b>Accéder</b></td>
                 <td><code>élément [index] [liste]</code></td>
-                <td><code>item [index] [list]</code></td>
-                <td>Récupère l'élément à l'index n (commence à 1)</td>
+                <td><code>ecris élément 1 :ma_liste</code></td>
             </tr>
             <tr>
-                <td><code>fixeélément [index] [nom_liste] [valeur]</code></td>
-                <td><code>setitem [index] [list_name] [value]</code></td>
-                <td>Modifie un élément de la liste</td>
+                <td><b>Modifier</b></td>
+                <td><code>fixeélément [index] [nom] [valeur]</code></td>
+                <td><code>fixeélément 2 "ma_liste 50</code></td>
+            </tr>
+            <tr>
+                <td><b>Ajouter</b></td>
+                <td><code>ajoute [nom] [valeur]</code></td>
+                <td><code>ajoute "ma_liste 40</code></td>
+            </tr>
+            <tr>
+                <td><b>Supprimer</b></td>
+                <td><code>retire [index] [nom]</code></td>
+                <td><code>retire 1 "ma_liste</code></td>
+            </tr>
+            <tr>
+                <td><b>Taille</b></td>
+                <td><code>taille [liste]</code></td>
+                <td><code>ecris taille :ma_liste</code></td>
             </tr>
         </table>
     </section>
 
     <section>
-        <h2>4. Événements</h2>
+        <h2>6. Événements</h2>
         <table>
             <tr>
                 <th>Français</th>
@@ -294,7 +315,7 @@
     </section>
 
     <section>
-        <h2>5. Structures de contrôle</h2>
+        <h2>7. Structures de contrôle</h2>
         <h3>Boucles : répète / repete (repeat)</h3>
         <p>Exécute un bloc de commandes plusieurs fois. La variable <code>:repcount</code> contient le numéro de l'itération actuelle.</p>
         <pre>répète 4 [ av 100 td 90 ]</pre>
@@ -315,7 +336,7 @@
     </section>
 
     <section>
-        <h2>4. Variables et Affectations</h2>
+        <h2>8. Variables et Affectations</h2>
         <p>Syntaxe standard Logo : <code>donne "nom valeur</code> (anglais: <code>make</code>)</p>
         <p>Syntaxe moderne : <code>nom = valeur</code></p>
         <pre>taille = 100
@@ -323,7 +344,7 @@ av :taille</pre>
     </section>
 
     <section>
-        <h2>5. Procédures</h2>
+        <h2>9. Procédures</h2>
         <p>Créez des fonctions réutilisables avec <code>pour [nom] [paramètres] ... fin</code>.</p>
         <pre>pour carré :taille
   répète 4 [ av :taille td 90 ]
@@ -331,7 +352,7 @@ fin</pre>
     </section>
 
     <section>
-        <h2>6. Expressions et Fonctions Mathématiques</h2>
+        <h2>10. Expressions et Fonctions Mathématiques</h2>
         <p>Support des parenthèses et priorité des opérations (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>).</p>
         <h3>Fonctions disponibles :</h3>
         <table>
