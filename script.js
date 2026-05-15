@@ -181,7 +181,6 @@ class Turtle {
         const s = (text === null || text === undefined) ? "" : String(text);
         this.ctx.fillText(s, 0, 0);
         this.ctx.restore();
-        this.forward(this.ctx.measureText(s).width + 5);
     }
 
     drawTurtle() {
