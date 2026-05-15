@@ -6,16 +6,32 @@ class Turtle {
         this.reset();
     }
 
+    toCanvasX(x) {
+        return this.canvas.width / 2 + x;
+    }
+
+    toCanvasY(y) {
+        return this.canvas.height / 2 - y;
+    }
+
+    fromCanvasX(cx) {
+        return cx - this.canvas.width / 2;
+    }
+
+    fromCanvasY(cy) {
+        return this.canvas.height / 2 - cy;
+    }
+
     reset() {
-        this.x = this.canvas.width / 2;
-        this.y = this.canvas.height / 2;
-        this.angle = -Math.PI / 2; // Pointing up
+        this.x = 0;
+        this.y = 0;
+        this.angle = Math.PI / 2; // Pointing up (logical angle 90 deg)
         this.penDown = true;
         this.color = 'black';
         this.width = 2;
         this.visible = true;
         this.font = '16px Consolas';
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.clear();
     }
 
     clear() {
@@ -23,9 +39,9 @@ class Turtle {
     }
 
     home() {
-        this.x = this.canvas.width / 2;
-        this.y = this.canvas.height / 2;
-        this.angle = -Math.PI / 2;
+        this.x = 0;
+        this.y = 0;
+        this.angle = Math.PI / 2;
     }
 
     setxy(x, y) {
@@ -33,8 +49,8 @@ class Turtle {
         y = parseFloat(y);
         if (this.penDown) {
             this.ctx.beginPath();
-            this.ctx.moveTo(this.x, this.y);
-            this.ctx.lineTo(x, y);
+            this.ctx.moveTo(this.toCanvasX(this.x), this.toCanvasY(this.y));
+            this.ctx.lineTo(this.toCanvasX(x), this.toCanvasY(y));
             this.ctx.strokeStyle = this.color;
             this.ctx.lineWidth = this.width;
             this.ctx.lineCap = 'round';
@@ -45,13 +61,19 @@ class Turtle {
     }
 
     setheading(angleDegrees) {
-        this.angle = (parseFloat(angleDegrees) * Math.PI) / 180 - Math.PI / 2;
+        // angle 0 is UP (90 logical deg). Clockwise.
+        this.angle = (90 - parseFloat(angleDegrees)) * Math.PI / 180;
     }
 
     arc(angleDegrees, radius) {
         if (!this.penDown) return;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, parseFloat(radius), this.angle, this.angle + (parseFloat(angleDegrees) * Math.PI) / 180, angleDegrees < 0);
+        // Canvas angles are clockwise from positive X (3 o'clock)
+        // Logo angle is clockwise from North (12 o'clock)
+        // Turtle.angle is counter-clockwise from positive X
+        const startAngle = -this.angle;
+        const endAngle = startAngle + (parseFloat(angleDegrees) * Math.PI / 180);
+        this.ctx.arc(this.toCanvasX(this.x), this.toCanvasY(this.y), parseFloat(radius), startAngle, endAngle, angleDegrees < 0);
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -60,7 +82,11 @@ class Turtle {
     rectangle(x1, y1, x2, y2) {
         if (!this.penDown) return;
         this.ctx.beginPath();
-        this.ctx.rect(parseFloat(x1), parseFloat(y1), parseFloat(x2) - parseFloat(x1), parseFloat(y2) - parseFloat(y1));
+        const lx1 = this.toCanvasX(parseFloat(x1));
+        const ly1 = this.toCanvasY(parseFloat(y1));
+        const lx2 = this.toCanvasX(parseFloat(x2));
+        const ly2 = this.toCanvasY(parseFloat(y2));
+        this.ctx.rect(lx1, ly1, lx2 - lx1, ly2 - ly1);
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -69,7 +95,7 @@ class Turtle {
     circle(r) {
         if (!this.penDown) return;
         this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, parseFloat(r), 0, 2 * Math.PI);
+        this.ctx.arc(this.toCanvasX(this.x), this.toCanvasY(this.y), parseFloat(r), 0, 2 * Math.PI);
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -78,8 +104,8 @@ class Turtle {
     line(x1, y1, x2, y2) {
         if (!this.penDown) return;
         this.ctx.beginPath();
-        this.ctx.moveTo(parseFloat(x1), parseFloat(y1));
-        this.ctx.lineTo(parseFloat(x2), parseFloat(y2));
+        this.ctx.moveTo(this.toCanvasX(parseFloat(x1)), this.toCanvasY(parseFloat(y1)));
+        this.ctx.lineTo(this.toCanvasX(parseFloat(x2)), this.toCanvasY(parseFloat(y2)));
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -92,7 +118,7 @@ class Turtle {
         const ry = Math.abs(parseFloat(y2) - parseFloat(y1)) / 2;
         const cx = (parseFloat(x1) + parseFloat(x2)) / 2;
         const cy = (parseFloat(y1) + parseFloat(y2)) / 2;
-        this.ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+        this.ctx.ellipse(this.toCanvasX(cx), this.toCanvasY(cy), rx, ry, 0, 0, 2 * Math.PI);
         this.ctx.strokeStyle = this.color;
         this.ctx.lineWidth = this.width;
         this.ctx.stroke();
@@ -104,8 +130,8 @@ class Turtle {
 
         if (this.penDown) {
             this.ctx.beginPath();
-            this.ctx.moveTo(this.x, this.y);
-            this.ctx.lineTo(newX, newY);
+            this.ctx.moveTo(this.toCanvasX(this.x), this.toCanvasY(this.y));
+            this.ctx.lineTo(this.toCanvasX(newX), this.toCanvasY(newY));
             this.ctx.strokeStyle = this.color;
             this.ctx.lineWidth = this.width;
             this.ctx.lineCap = 'round';
@@ -173,11 +199,13 @@ class Turtle {
 
     write(text) {
         this.ctx.save();
-        this.ctx.translate(this.x, this.y);
-        this.ctx.rotate(this.angle + Math.PI / 2);
+        this.ctx.translate(this.toCanvasX(this.x), this.toCanvasY(this.y));
+        // Rotate text to match turtle orientation.
+        // Turtle.angle is counter-clockwise from East.
+        // Canvas rotate is clockwise from East.
+        this.ctx.rotate(-this.angle + Math.PI / 2);
         this.ctx.font = this.font;
         this.ctx.fillStyle = this.color;
-        // If text is a number, convert to string. If null/undefined, use empty string.
         const s = (text === null || text === undefined) ? "" : String(text);
         this.ctx.fillText(s, 0, 0);
         this.ctx.restore();
@@ -187,8 +215,8 @@ class Turtle {
         if (!this.visible) return;
 
         this.ctx.save();
-        this.ctx.translate(this.x, this.y);
-        this.ctx.rotate(this.angle + Math.PI / 2);
+        this.ctx.translate(this.toCanvasX(this.x), this.toCanvasY(this.y));
+        this.ctx.rotate(-this.angle + Math.PI / 2);
 
         // Turtle body
         this.ctx.beginPath();
@@ -827,7 +855,9 @@ class LogoInterpreter {
                 case 'showimage': {
                     const imgUrl = evaluateExpression();
                     let ix = this.turtle.x, iy = this.turtle.y, iw, ih;
+                    let useCoords = false;
                     if (tokens[i] === '[') {
+                        useCoords = true;
                         const params = getBlock();
                         const oldT = tokens; const oldI = i;
                         tokens = params; i = 0;
@@ -839,8 +869,10 @@ class LogoInterpreter {
                     }
                     const img = new Image();
                     img.onload = () => {
-                        if (iw && ih) this.turtle.ctx.drawImage(img, ix, iy, iw, ih);
-                        else this.turtle.ctx.drawImage(img, ix, iy);
+                        const cx = this.turtle.toCanvasX(ix);
+                        const cy = this.turtle.toCanvasY(iy);
+                        if (iw && ih) this.turtle.ctx.drawImage(img, cx, cy, iw, ih);
+                        else this.turtle.ctx.drawImage(img, cx, cy);
                     };
                     img.src = imgUrl;
                     break;
@@ -865,7 +897,9 @@ class LogoInterpreter {
                     video.onplay = () => {
                         const draw = () => {
                             if (!video.paused && !video.ended) {
-                                this.turtle.ctx.drawImage(video, vx, vy, vw, vh);
+                                const cx = this.turtle.toCanvasX(vx);
+                                const cy = this.turtle.toCanvasY(vy);
+                                this.turtle.ctx.drawImage(video, cx, cy, vw, vh);
                                 requestAnimationFrame(draw);
                             }
                         };
@@ -1038,8 +1072,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (interpreter.eventHandlers.click) {
             // Set mouse vars
             const rect = canvas.getBoundingClientRect();
-            interpreter.variables.set('mousex', e.clientX - rect.left);
-            interpreter.variables.set('mousey', e.clientY - rect.top);
+            const cx = e.clientX - rect.left;
+            const cy = e.clientY - rect.top;
+            interpreter.variables.set('mousex', turtle.fromCanvasX(cx));
+            interpreter.variables.set('mousey', turtle.fromCanvasY(cy));
             interpreter.runEvent(interpreter.eventHandlers.click);
         }
     });
@@ -1132,6 +1168,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         turtle.drawTurtle();
         outputConsole.textContent = '';
     });
+
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('canvas-container');
+        if (container) {
+            // Update canvas dimensions to match container if needed,
+            // but let's keep it simple and just redraw the turtle at center.
+            // If the user wants responsive canvas, we'd need to resize it here.
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            turtle.drawTurtle();
+        }
+    });
+    // Trigger initial resize
+    window.dispatchEvent(new Event('resize'));
 
     // Default language
     applyLang('fr');
