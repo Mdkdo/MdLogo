@@ -22,8 +22,13 @@
                     <select id="examples-select">
                         <option value="">-- Choisir un exemple --</option>
                     </select>
+                    <button id="save-btn" title="Sauvegarder">💾</button>
+                    <span id="save-status"></span>
                 </div>
-                <textarea id="code-editor" placeholder="Entrez vos commandes Logo ici...&#10;Exemple: repeat 4 [ fd 100 rt 90 ]"></textarea>
+                <div id="editor-wrapper">
+                    <div id="highlight-layer"></div>
+                    <textarea id="code-editor" spellcheck="false" placeholder="Entrez vos commandes Logo ici...&#10;Exemple: repeat 4 [ fd 100 rt 90 ]"></textarea>
+                </div>
                 <div id="controls">
                     <button id="run-btn">Exécuter</button>
                     <button id="clear-btn">Effacer</button>

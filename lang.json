@@ -25,7 +25,9 @@
       "unknown_command": "Commande inconnue",
       "unknown_variable": "Variable inconnue",
       "unterminated_procedure": "Procédure non terminée",
-      "expected_bracket": "Attendu ["
+      "expected_bracket": "Attendu [",
+      "save_auto": "Auto-enregistré",
+      "saved": "Enregistré"
     }
   },
   "en": {
@@ -54,7 +56,9 @@
       "unknown_command": "Unknown command",
       "unknown_variable": "Unknown variable",
       "unterminated_procedure": "Unterminated procedure",
-      "expected_bracket": "Expected ["
+      "expected_bracket": "Expected [",
+      "save_auto": "Auto-saved",
+      "saved": "Saved"
     }
   }
 }

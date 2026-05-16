@@ -1226,6 +1226,91 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    const highlightLayer = document.getElementById('highlight-layer');
+    const saveBtn = document.getElementById('save-btn');
+    const saveStatus = document.getElementById('save-status');
+
+    const keywords = ['repete', 'répète', 'repeat', 'si', 'if', 'si_sinon', 'ifelse', 'pour', 'to', 'fin', 'end', 'donne', 'make', 'rend', 'output', 'quand_clic', 'onclick', 'quand_touche', 'onkey'];
+    const commands = ['av', 'fd', 're', 'bk', 'td', 'rt', 'tg', 'lt', 've', 'cs', 'nettoie', 'clean', 'home', 'origine', 'lc', 'pu', 'bc', 'pd', 'ct', 'ht', 'mt', 'st', 'faisxy', 'setxy', 'faiscap', 'setheading', 'arc', 'rectangle', 'cercle', 'circle', 'ligne', 'line', 'ellipse', 'ecris', 'write', 'police', 'font', 'joueson', 'playsound', 'montreimage', 'showimage', 'montrevideo', 'showvideo', 'fcc', 'pc', 'fc', 'tc', 'ps', 'fcl', 'remplit', 'fill', 'fccf', 'setbg', 'list_ajout', 'list_append', 'list_modifie', 'list_modify', 'list_retire', 'list_remove'];
+    const mathFuncs = ['sin', 'cos', 'tan', 'atan', 'sqrt', 'abs', 'exp', 'ln', 'log', 'log10', 'pow', 'random', 'hasard', 'int', 'round', 'arrondi', 'ceil', 'plafond', 'xcor', 'ycor', 'heading', 'cap', 'distance', 'towards', 'vers', 'modulo', 'reste', 'min', 'max', 'pi', 'pos', 'élément', 'item', 'list_taille', 'list_size', 'repcount', 'mousex', 'mousey'];
+
+    const updateHighlighting = () => {
+        let code = codeEditor.value;
+        // Escape HTML
+        let escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // Match tokens
+        const regex = /(;.*$)|("[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]*)|(:[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)|(\[|\])|(\d+\.?\d*)|(\b[a-z0-9_áàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+\b)/gmi;
+
+        const highlighted = escaped.replace(regex, (match, comment, string, variable, bracket, number, word) => {
+            if (comment) return `<span class="hl-comment">${match}</span>`;
+            if (string) return `<span class="hl-string">${match}</span>`;
+            if (variable) return `<span class="hl-variable">${match}</span>`;
+            if (bracket) return `<span class="hl-bracket">${match}</span>`;
+            if (number) return `<span class="hl-number">${match}</span>`;
+            if (word) {
+                const lower = word.toLowerCase();
+                if (keywords.includes(lower)) return `<span class="hl-keyword">${word.toUpperCase()}</span>`;
+                if (commands.includes(lower) || mathFuncs.includes(lower)) return `<span class="hl-function">${word.toUpperCase()}</span>`;
+                return word;
+            }
+            return match;
+        });
+
+        highlightLayer.innerHTML = highlighted + (code.endsWith('\n') ? ' ' : '');
+    };
+
+    const autoUppercase = () => {
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        let code = codeEditor.value;
+        const regex = /\b([a-z0-9_áàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)\b/gmi;
+
+        const newCode = code.replace(regex, (match) => {
+            const lower = match.toLowerCase();
+            if (keywords.includes(lower) || commands.includes(lower) || mathFuncs.includes(lower)) {
+                return match.toUpperCase();
+            }
+            return match;
+        });
+
+        if (newCode !== code) {
+            codeEditor.value = newCode;
+            codeEditor.setSelectionRange(start, end);
+        }
+    };
+
+    codeEditor.addEventListener('input', () => {
+        autoUppercase();
+        updateHighlighting();
+        autoSave();
+    });
+
+    codeEditor.addEventListener('scroll', () => {
+        highlightLayer.scrollTop = codeEditor.scrollTop;
+        highlightLayer.scrollLeft = codeEditor.scrollLeft;
+    });
+
+    const autoSave = () => {
+        localStorage.setItem('logo_code', codeEditor.value);
+        saveStatus.textContent = translations[interpreter.lang]?.save_auto || 'Auto-enregistré';
+        setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+    };
+
+    const manualSave = () => {
+        localStorage.setItem('logo_code', codeEditor.value);
+        saveStatus.textContent = translations[interpreter.lang]?.saved || 'Enregistré';
+        setTimeout(() => { saveStatus.textContent = ''; }, 2000);
+    };
+
+    saveBtn.addEventListener('click', manualSave);
+
+    // Load saved code
+    const savedCode = localStorage.getItem('logo_code');
+    if (savedCode) {
+        codeEditor.value = savedCode;
+    }
+
     clearBtn.addEventListener('click', () => {
         turtle.reset();
         turtle.drawTurtle();
@@ -1248,5 +1333,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Default language
     applyLang('fr');
+    updateHighlighting();
     turtle.drawTurtle();
 });
