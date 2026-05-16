@@ -24,8 +24,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updateHighlighting = () => {
         let code = codeEditor.value;
         let escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const regex = /(;.*$)|("[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]*)|(:[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)|(\[|\])|(\d+\.?\d*)|(\b[a-z0-9_áàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+\b)/gmi;
-        const highlighted = escaped.replace(regex, (match, comment, string, variable, bracket, number, word) => {
+        // Group 1: HTML Entities (Priority), Group 2: Comments, Group 3: Strings, Group 4: Variables, Group 5: Brackets, Group 6: Numbers, Group 7: Words
+        const regex = /(&lt;|&gt;|&amp;)|(;.*$)|("[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]*)|(:[\wáàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+)|(\[|\])|(\d+\.?\d*)|(\b[a-z0-9_áàâäãåçéèêëíìîïñóòôöõúùûüýÿ]+\b)/gmi;
+        const highlighted = escaped.replace(regex, (match, entity, comment, string, variable, bracket, number, word) => {
+            if (entity) return entity;
             if (comment) return `<span class="hl-comment">${match}</span>`;
             if (string) return `<span class="hl-string">${match}</span>`;
             if (variable) return `<span class="hl-variable">${match}</span>`;

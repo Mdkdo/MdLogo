@@ -998,10 +998,24 @@ class LogoInterpreter {
                     break;
                 case 'pc':
                 case 'fc':
-                case 'fcc':
                 case 'setpencolor':
                 case 'fixecouleurcrayon':
                     this.turtle.setpencolor(evaluateExpression());
+                    break;
+                case 'fcl':
+                case 'fillcolor':
+                case 'fixecouleurremplissage':
+                    this.turtle.fillcolor = this.turtle.translateColor(evaluateExpression());
+                    break;
+                case 'remplit':
+                case 'fill':
+                    this.turtle.ctx.fillStyle = this.turtle.fillcolor || this.turtle.color;
+                    this.turtle.ctx.fill();
+                    break;
+                case 'fcc':
+                case 'canvascolor':
+                case 'fixecouleurcanvas':
+                    this.turtle.canvas.style.backgroundColor = this.turtle.translateColor(evaluateExpression());
                     break;
                 case 'ps':
                 case 'tc':
