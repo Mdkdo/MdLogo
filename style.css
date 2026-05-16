@@ -75,25 +75,79 @@ main {
     border: 1px solid #ccc;
 }
 
-#lang-select {
-    width: 100px;
-}
-
 #examples-select {
     flex: 1;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
 }
 
-#save-btn {
+#vertical-menu {
+    width: 60px;
+    background-color: #34495e;
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+#vertical-menu button {
     width: 40px;
-    padding: 8px;
-    background-color: #3498db;
+    height: 40px;
+    padding: 0;
+    background-color: transparent;
+    color: #bdc3c7;
+    font-size: 1.2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-#save-status {
-    font-size: 0.8rem;
-    color: #7f8c8d;
-    align-self: center;
-    min-width: 80px;
+#vertical-menu button:hover {
+    background-color: #2c3e50;
+    color: white;
+}
+
+#vertical-menu .btn-run {
+    color: #2ecc71;
+}
+
+#vertical-menu hr {
+    width: 30px;
+    border: 0;
+    border-top: 1px solid #455a64;
+    margin: 5px 0;
+}
+
+#toolbar {
+    display: flex;
+    gap: 1rem;
+    padding-bottom: 5px;
+    align-items: center;
+}
+
+.tool-group {
+    display: flex;
+    gap: 2px;
+    background-color: #ecf0f1;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+.tool-group button {
+    background-color: white;
+    color: #2c3e50;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border: 1px solid #dcdde1;
+    flex: none;
+}
+
+.tool-group button:hover {
+    background-color: #f8f9fa;
 }
 
 #editor-wrapper {
@@ -138,7 +192,7 @@ main {
     pointer-events: none;
 }
 
-/* Syntax Highlighting */
+/* Syntax Highlighting Light */
 .hl-keyword { color: #8e44ad; font-weight: bold; }
 .hl-function { color: #2980b9; }
 .hl-string { color: #e67e22; }
@@ -147,10 +201,31 @@ main {
 .hl-number { color: #c0392b; }
 .hl-bracket { color: #34495e; font-weight: bold; }
 
-#controls {
-    display: flex;
-    gap: 0.5rem;
+/* Dark Mode Support */
+body.dark-mode {
+    background-color: #1e272e;
+    color: #ecf0f1;
 }
+body.dark-mode #editor-wrapper {
+    background-color: #2f3640;
+    border-color: #4b6584;
+}
+body.dark-mode #highlight-layer { color: #dcdde1; }
+body.dark-mode #code-editor { caret-color: white; }
+body.dark-mode #toolbar { border-bottom-color: #4b6584; }
+body.dark-mode .tool-group { background-color: #353b48; }
+body.dark-mode .tool-group button { background-color: #2f3640; color: #dcdde1; border-color: #4b6584; }
+body.dark-mode #examples-select { background-color: #2f3640; color: white; border-color: #4b6584; }
+body.dark-mode header { background-color: #1e272e; }
+
+/* Dark Mode Highlighting */
+body.dark-mode .hl-keyword { color: #d596ff; }
+body.dark-mode .hl-function { color: #70a1ff; }
+body.dark-mode .hl-string { color: #eccc68; }
+body.dark-mode .hl-comment { color: #747d8c; }
+body.dark-mode .hl-variable { color: #7beded; }
+body.dark-mode .hl-number { color: #ff6b81; }
+body.dark-mode .hl-bracket { color: #a4b0be; }
 
 button {
     padding: 10px 20px;
@@ -162,7 +237,6 @@ button {
     background-color: #2ecc71;
     color: white;
     transition: all 0.2s;
-    flex: 1;
 }
 
 button:hover {
@@ -171,14 +245,6 @@ button:hover {
 
 button:active {
     transform: translateY(1px);
-}
-
-#clear-btn {
-    background-color: #e74c3c;
-}
-
-#clear-btn:hover {
-    background-color: #c0392b;
 }
 
 #canvas-container {

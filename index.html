@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Logo Turtle Interpreter</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app">
@@ -13,25 +14,42 @@
             <a href="help.html" id="help-link" target="_blank">Aide (?)</a>
         </header>
         <main>
+            <!-- Vertical Menu -->
+            <nav id="vertical-menu">
+                <button data-action="new" title="Nouveau"><i class="fas fa-file-plus"></i></button>
+                <button data-action="open" title="Ouvrir"><i class="fas fa-folder-open"></i></button>
+                <button data-action="save" title="Enregistrer"><i class="fas fa-save"></i></button>
+                <hr>
+                <button data-action="run" title="Exécuter" class="btn-run"><i class="fas fa-play"></i></button>
+                <hr>
+                <button data-action="theme" title="Mode Clair/Sombre"><i class="fas fa-adjust"></i></button>
+                <button data-action="settings" title="Paramètres"><i class="fas fa-cog"></i></button>
+            </nav>
+
             <div id="editor-container">
                 <div id="toolbar">
-                    <select id="lang-select">
-                        <option value="fr">Français</option>
-                        <option value="en">English</option>
-                    </select>
+                    <div class="tool-group">
+                        <button data-action="undo" title="Annuler"><i class="fas fa-undo"></i></button>
+                        <button data-action="redo" title="Rétablir"><i class="fas fa-redo"></i></button>
+                    </div>
+                    <div class="tool-group">
+                        <button data-action="select-all" title="Sélectionner tout"><i class="fas fa-mouse-pointer"></i></button>
+                        <button data-action="copy" title="Copier"><i class="fas fa-copy"></i></button>
+                        <button data-action="cut" title="Couper"><i class="fas fa-cut"></i></button>
+                        <button data-action="paste" title="Coller"><i class="fas fa-paste"></i></button>
+                    </div>
+                    <div class="tool-group">
+                        <button data-action="comment" title="Commenter/Décommenter"><i class="fas fa-comment-slash"></i></button>
+                        <button data-action="tab" title="Indenter"><i class="fas fa-indent"></i></button>
+                        <button data-action="untab" title="Désindenter"><i class="fas fa-outdent"></i></button>
+                    </div>
                     <select id="examples-select">
-                        <option value="">-- Choisir un exemple --</option>
+                        <option value="">-- Exemples --</option>
                     </select>
-                    <button id="save-btn" title="Sauvegarder">💾</button>
-                    <span id="save-status"></span>
                 </div>
                 <div id="editor-wrapper">
                     <div id="highlight-layer"></div>
-                    <textarea id="code-editor" spellcheck="false" placeholder="Entrez vos commandes Logo ici...&#10;Exemple: repeat 4 [ fd 100 rt 90 ]"></textarea>
-                </div>
-                <div id="controls">
-                    <button id="run-btn">Exécuter</button>
-                    <button id="clear-btn">Effacer</button>
+                    <textarea id="code-editor" spellcheck="false" placeholder="Tapez votre code Logo ici..."></textarea>
                 </div>
             </div>
             <div id="canvas-container">
@@ -41,5 +59,6 @@
         <div id="output-console"></div>
     </div>
     <script src="script.js"></script>
+    <script src="editor.js"></script>
 </body>
 </html>
